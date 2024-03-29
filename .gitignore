@@ -1,0 +1,10 @@
+*.tar.gz
+*.zst
+*bin
+*.img
+*.map
+*.out
+
+build
+bochs/pkg
+bochs/src
