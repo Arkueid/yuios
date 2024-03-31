@@ -7,12 +7,13 @@
 #include <yui/assert.h>
 #include <yui/debugk.h>
 #include <yui/global.h>
+#include <yui/task.h>
 
 void kernel_init()
 {
     console_init();
 
-    gdt_init();
+    task_init();
     
     return;
 }

@@ -6,6 +6,7 @@
         "printk.h": "c",
         "string.h": "c",
         "assert.h": "c",
-        "stdarg.h": "c"
+        "stdarg.h": "c",
+        "task.h": "c"
     }
 }
