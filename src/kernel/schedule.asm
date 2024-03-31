@@ -14,7 +14,7 @@ task_switch:
 
     mov [eax], esp ; 栈起始位置存下当前esp值
 
-    mov eax, [ebp + 8] ; next 参数，task_t，也是栈的起始地址
+    mov eax, [ebp + 8] ; next 参数，task_t，也是该任务栈顶的位置
     mov esp, [eax] ; 栈顶位置被修改
 
     pop edi
@@ -22,4 +22,4 @@ task_switch:
     pop ebx
     pop ebp
  
-    ret ; 返回到esp所指位置
+    ret ; 跳转到esp所指位置
