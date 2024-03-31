@@ -4,24 +4,18 @@
 #include <yui/string.h>
 #include <yui/console.h>
 #include <yui/stdarg.h>
+#include <yui/printk.h>
 
-void test_args(int cnt, ...)
-{
-    va_list args;
-    va_start(args, cnt);
-
-    int arg;
-    while (cnt--)
-    {
-        arg = va_arg(args, char);
-    }
-    va_end(args);
-}
 
 void kernel_init()
 {
     console_init();
 
-    test_args(5, 'h', 'e', 'l', 'l', 'o');
+    int cnt = 30;
+    while (cnt--)
+    {
+        printk("Hello %s\n", "Yui~");
+    }
+    
     return;
 }

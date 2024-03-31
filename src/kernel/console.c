@@ -98,7 +98,7 @@ void console_clear()
     set_cursor();
 
     u16 *ptr = (u16 *)MEM_BASE;
-    while (ptr < MEM_END)
+    while (ptr < (u16 *)MEM_END)
     {
         *ptr++ = erase;
     }
@@ -141,7 +141,7 @@ static void scroll_up()
     else
     {
         // 将当前屏幕复制到显存开始处
-        memcpy(MEM_BASE, screen, SCR_SIZE);
+        memcpy((void *)MEM_BASE, (void *)screen, SCR_SIZE);
         // 光标移动到新屏幕对应位置
         pos = pos - screen + MEM_BASE;
         screen = MEM_BASE;

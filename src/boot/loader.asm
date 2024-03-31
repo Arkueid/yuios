@@ -1,3 +1,7 @@
+; 内核loader
+; 1. 检测内存 ards 内存范围描述符
+; 2. 初始化gdt
+; 3. 开启a20地址线，开启保护模式，启动内核
 [org 0x1000]
 
 dw 0x55aa ; 用于错误判断
@@ -16,8 +20,8 @@ detect_memory:
     mov edx, 0x534d4150 ; 固定签名
 
 .next:
-    ; 子功能号
-    mov eax, 0xe820
+    ; 子功能号 - 遍历主机上所有内存
+    mov eax, 0xe820 
     ; ards 结构大小
     mov ecx, 20
     ; 0x15 系统调用
@@ -45,7 +49,7 @@ detect_memory:
 prepare_protected_mode:
     cli ; 关中断
 
-    in al, 0x92
+    in al, 0x92 ; 开启A20地址线
     or al, 0b10
     out 0x92, al
 
@@ -57,7 +61,7 @@ prepare_protected_mode:
     or eax, 1 ; 高位置1
     mov cr0, eax
 
-    ; 跳转来刷新缓存
+    ; 跳转来刷新段寄存器
     jmp dword code_selector:protected_mode
 
 ; 阻塞
@@ -98,7 +102,7 @@ protected_mode:
     mov gs, ax
     mov ss, ax
 
-    ; 其上方为操作系统
+    ; 内存栈从此处开始
     mov esp, 0x10000
 
     mov edi, 0x10000
