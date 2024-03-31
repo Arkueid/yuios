@@ -2,9 +2,10 @@
 
 int main()
 {
-    int a[] = {1, 2, 3};
-    int *p = a;
-    *p++=3;
-    printf("*p==%d\n", *a);
+    char arr[] = {'H', 'e', 'l', 'l', 'o'};
+    int * ptr = (int*) arr;
+    ptr += sizeof(char*);
+    // int *p = (int *)ptr;
+    printf("%c\n", *((char*)ptr));
     return 0;
 }

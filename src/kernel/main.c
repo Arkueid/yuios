@@ -3,22 +3,25 @@
 #include <yui/io.h>
 #include <yui/string.h>
 #include <yui/console.h>
+#include <yui/stdarg.h>
 
-char message[] = "Hello, world!!!\n";
-char buf[1024];
+void test_args(int cnt, ...)
+{
+    va_list args;
+    va_start(args, cnt);
+
+    int arg;
+    while (cnt--)
+    {
+        arg = va_arg(args, char);
+    }
+    va_end(args);
+}
 
 void kernel_init()
 {
     console_init();
 
-    u32 count = 0;
-    while (true)
-    {
-        buf[0] = 48 + (count % 10);
-        u32 c = 1;
-        console_write(buf, c);
-        console_write(message, sizeof(message) - 1);
-        count++;
-    }
+    test_args(5, 'h', 'e', 'l', 'l', 'o');
     return;
 }

@@ -1,4 +1,6 @@
+# 构建文件夹
 BUILD:=../build
+# 源文件夹
 SRC:=.
 
 CFLAGS:= -m32 						# 32位的程序
@@ -16,8 +18,10 @@ CFLAGS+= -mpreferred-stack-boundary=2 # 不要栈对齐
 CFLAGS:=$(strip ${CFLAGS})
 
 DEBUG:= -g
+# 头文件目录
 INCLUDE:= -I$(SRC)/include
 
+# 内核加载程序的入口地址
 ENTRYPOINT:=0x10000
 
 $(BUILD)/boot/%.bin: $(SRC)/boot/%.asm
@@ -43,6 +47,7 @@ $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 	$(shell mkdir -p $(dir $@))
 	ld -m elf_i386 -static $^ -o $@ -Ttext $(ENTRYPOINT)
 
+# \todo
 $(BUILD)/system.bin: $(BUILD)/kernel.bin
 	objcopy -O binary $< $@
 
