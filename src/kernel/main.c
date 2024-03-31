@@ -3,19 +3,16 @@
 #include <yui/io.h>
 #include <yui/string.h>
 #include <yui/console.h>
-#include <yui/stdarg.h>
 #include <yui/printk.h>
-
+#include <yui/assert.h>
+#include <yui/debugk.h>
+#include <yui/global.h>
 
 void kernel_init()
 {
     console_init();
 
-    int cnt = 30;
-    while (cnt--)
-    {
-        printk("Hello %s\n", "Yui~");
-    }
+    gdt_init();
     
     return;
 }

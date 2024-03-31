@@ -4,6 +4,8 @@
         "types.h": "c",
         "stdio.h": "c",
         "printk.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "assert.h": "c",
+        "stdarg.h": "c"
     }
 }

@@ -1,7 +1,12 @@
-#include <yui/types.h>
-#include <stdio.h>
+#ifndef YUI_GLOBAL_H
+#define YUI_GLOBAL_H
 
-typedef struct descriptor
+#include <yui/types.h>
+
+#define GDT_SIZE 128
+
+// 全局描述符
+typedef struct descriptor_t
 {
     unsigned short limit_low;
     unsigned int base_low : 24;
@@ -15,4 +20,23 @@ typedef struct descriptor
     unsigned char big : 1;
     unsigned char granularity : 1;
     unsigned char base_high;
-} _packed descriptor;
+} _packed descriptor_t;
+
+// 段选择子
+typedef struct selector_t
+{
+    u8 RPL : 2;
+    u8 TI : 1;
+    u16 index : 13;
+} selector_t;
+
+// 全局描述符指针
+typedef struct pointer_t
+{
+    u16 limit;
+    u32 base;
+} _packed pointer_t;
+
+void gdt_init();
+
+#endif

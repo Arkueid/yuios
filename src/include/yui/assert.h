@@ -5,7 +5,7 @@
  * @param 表达式
  * @param 文件路径
  * @param 文件名称
- * @line 出错行号
+ * @param 出错行号
  */
 void assertion_failure(char *exp, char *file, char *base, int line);
 
@@ -19,7 +19,7 @@ void assertion_failure(char *exp, char *file, char *base, int line);
         ;                                \
     else                                 \
         assertion_failure(#exp,          \
-                          __FILE__,      \ 
+                          __FILE__,      \
                           __BASE_FILE__, \
                           __LINE__)
 
