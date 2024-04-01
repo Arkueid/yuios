@@ -13,7 +13,8 @@ void kernel_init()
 {
     console_init();
 
-    task_init();
+    printk("Goodbye, March!\n");
+    printk("Hello, April!\n");
     
     return;
 }

@@ -15,93 +15,27 @@ mov es, ax
 mov ss, ax
 mov sp, 0x7c00
 
-mov si, booting
-call print
+; 注册中断函数
+mov word [0x0 * 4], interrupt ; 偏移量
+mov word [0x0 * 4 + 2], 0 ; 段地址
 
-mov edi, 0x1000 ; 读取的目标内存
-mov ecx, 2 ; 起始扇区
-mov bl, 4 ; 扇区数量
+; 0x80 即中断向量表的索引
+mov dx, 0
+mov ax, 1
+mov bx, 0
 
-call read_disk ; 读取内核加载器
-
-cmp word [0x1000], 0x55aa
-jnz error
-
-jmp 0:0x1002
+xchg bx, bx
+div bx  ; dx:ax / bx
 
 ; 阻塞
 jmp $
 
-; 读磁盘，需要与磁盘控制器的端口互传数据，有等待时间
-; 为了简单实现，连续使用三个jmp $+2
-read_disk:
-    mov dx, 0x1f2
-    mov al, bl
-    out dx, al
+interrupt:
+    mov si, booting_string
+    call print
+    iret
 
-    inc dx ; 0x1f3
-    mov al, cl
-    out dx, al
 
-    inc dx ; 0x1f4
-    shr ecx, 8
-    mov al, cl
-    out dx, al
-
-    inc dx ; 0x1f5
-    shr ecx, 8
-    mov al, cl
-    out dx, al
-
-    inc dx ; 0x1f6
-    shr ecx, 8
-    and cl, 0b1111 ; 取低四位
-    
-    mov al, 0b1110_0000
-    or al, cl
-    out dx, al 
-
-    inc dx ; 0x1f7
-    mov al, 0x20
-    out dx, al
-
-    xor ecx, ecx ; 将ecx清空
-    mov cl, bl ; 得到读写扇区的数量
-
-    .read:
-        push cx
-        call .waits ; 等待扇区准备完毕
-        call .reads ; 读取一个扇区
-        pop cx
-        loop .read
-    ret
-
-    .waits:
-        mov dx, 0x1f7
-        .check:
-            in al, dx
-            jmp $+2
-            jmp $+2
-            jmp $+2
-            and al, 0b1000_1000
-            cmp al, 0b0000_1000
-            jnz .check
-        ret
-
-    .reads:
-        mov dx, 0x1f0
-        mov cx, 256
-        .readw:
-            in ax, dx
-            jmp $+2
-            jmp $+2
-            jmp $+2
-            mov [edi], ax
-            add edi, 2
-            loop .readw
-        ret
-
-        
 print:
     mov ah, 0x0e
 .next:
@@ -114,16 +48,8 @@ print:
 .done:
     ret
 
-booting:
+booting_string:
     db "Booting...", 10, 13, 0 ; \n \r 字符串结束符
-
-error:
-    mov si, .msg
-    call print
-    hlt ; 让CPU停止
-    jmp $
-    .msg db "Booting Error!!!", 10, 13, 0
-    
 
 times 510 - ($ - $$) db 0
 
