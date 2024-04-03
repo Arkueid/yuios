@@ -185,7 +185,7 @@ read_disk:
 
 ; 选择子 RPL(2位)-TI(1位)-Index(13位)
 ; 小端 且 高3位为0
-code_selector equ (1 << 3)
+code_selector equ (1 << 3) ; 一个描述符8个字节
 data_selector equ (2 << 3)
 ; 内存开始位置 基地址
 memory_base equ 0
@@ -202,7 +202,7 @@ gdt_base:
 gdt_code: ; 代码段
     dw memory_limit & 0xffff ; 段界限 低16位
     dw memory_base & 0xffff ; 段基址 低16位
-    db (memory_base >> 16) 0xff ; 段基址 +8位
+    db (memory_base >> 16) & 0xff ; 段基址 +8位
     db 0b_1_00_1_1_0_1_0 ; 段属性
     ; 4k
     db 0b1_1_0_0_0000 | (memory_limit >> 16) & 0xf
@@ -210,7 +210,7 @@ gdt_code: ; 代码段
 gdt_data: ; 数据段
     dw memory_limit & 0xffff ; 段界限 低16位
     dw memory_base & 0xffff ; 段基址 低16位
-    db (memory_base >> 16) 0xff ; 段基址 +8位
+    db (memory_base >> 16) & 0xff ; 段基址 +8位
     db 0b_1_00_1_0_0_1_0 ; 段属性
     ; 4k
     db 0b1_1_0_0_0000 | (memory_limit >> 16) & 0xf
