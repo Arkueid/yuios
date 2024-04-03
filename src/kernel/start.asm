@@ -6,4 +6,5 @@ global _start
 _start:
     ; mov byte [0xb8000], 'K'
     call kernel_init
+    int 0x80
     jmp $ ; 阻塞
