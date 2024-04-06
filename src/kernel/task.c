@@ -1,6 +1,6 @@
 #include <yui/task.h>
 #include <yui/printk.h>
-#include <yui/debugk.h>
+#include <yui/debug.h>
 
 #define PAGE_SIZE 0x1000
 

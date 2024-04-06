@@ -1,4 +1,4 @@
-#include <yui/debugk.h>
+#include <yui/debug.h>
 #include <yui/stdarg.h>
 #include <yui/stdio.h>
 #include <yui/printk.h>

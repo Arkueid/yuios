@@ -45,7 +45,7 @@ $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 	$(BUILD)/kernel/printk.o \
 	$(BUILD)/lib/vsprintf.o \
 	$(BUILD)/kernel/assert.o \
-	$(BUILD)/kernel/debugk.o \
+	$(BUILD)/kernel/debug.o \
 	$(BUILD)/kernel/global.o \
 	$(BUILD)/kernel/task.o \
 	$(BUILD)/kernel/schedule.o \
