@@ -6,7 +6,7 @@ void delay(u32 count)
         ;
 }
 
-void hang()
+void hang() // 0x116cc
 {
     while (true)
         ;

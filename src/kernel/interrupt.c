@@ -3,6 +3,7 @@
 #include <yui/debug.h>
 #include <yui/printk.h>
 #include <yui/io.h>
+#include <yui/stdlib.h>
 
 #define LOGK(fmt, args...) DEBUG(fmt, ##args)
 // #define LOGK(fmt, args...)
@@ -64,7 +65,17 @@ void send_eoi(int vector)
 }
 
 // 异常处理函数
-void exception_handler(int vector)
+void exception_handler(
+    // 中断向量
+    int vector,
+    // 保存8个通用寄存器
+    u32 edi, u32 esi, u32 ebp, u32 esp,
+    u32 ebx, u32 edx, u32 ecx, u32 eax,
+    // 栈上文
+    u32 gs, u32 fs, u32 es, u32 ds,
+    u32 vector0, u32 error, // 压入错误码和中断向量
+    u32 eip, u32 cs, u32 eflags // 中断处理会先压入 eflags 和 ip
+ )
 {
     char *message = NULL;
     if (vector < 22)
@@ -76,19 +87,25 @@ void exception_handler(int vector)
         message = messages[15];
     }
 
-    printk("Exception: [0x%02x] %s \n", vector, message);
+    printk("\nException: [0x%02x] %s \n", vector, message);
+    printk("    VECTOR: 0x%02X\n", vector);
+    printk("    ERROR:  0x%02X\n", error);
+    printk("    EFLAGS: 0x%02X\n", eflags);
+    printk("    CS:     0x%02X\n", cs);
+    printk("    EIP:    0x%02X\n", eip);
+    printk("    ESP:    0x%02X\n", esp);
 
-    while (true)
-        ;
+    // 阻塞
+    hang();
 }
 
-u32 counter = 0;
+extern void schedule();
 
 void default_handler(int vector)
 {
     // 向中断控制器发送中断结束信息
     send_eoi(vector);
-    LOGK("[%d] default interrupt called %d...\n", vector, counter++);
+    schedule();
 }
 
 // 初始化中断控制器

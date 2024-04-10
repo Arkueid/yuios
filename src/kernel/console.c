@@ -126,26 +126,24 @@ static void scroll_up()
     // 显存中还能往下写一行
     if (screen + SCR_SIZE + ROW_SIZE < MEM_END)
     {
-        // 清空下一行
-        u32 *ptr = (u32 *)(screen + SCR_SIZE);
-        for (size_t i = 0; i < WIDTH; i++)
-        {
-            *ptr++ = erase;
-        }
 
-        // 屏幕往上滚动一行
-        screen += ROW_SIZE;
-        // 光标向下移动
-        pos += ROW_SIZE;
-    }
-    else
-    {
         // 将当前屏幕复制到显存开始处
         memcpy((void *)MEM_BASE, (void *)screen, SCR_SIZE);
         // 光标移动到新屏幕对应位置
         pos = pos - screen + MEM_BASE;
         screen = MEM_BASE;
     }
+    // 清空下一行
+    u32 *ptr = (u32 *)(screen + SCR_SIZE);
+    for (size_t i = 0; i < WIDTH; i++)
+    {
+        *ptr++ = erase;
+    }
+
+    // 屏幕往上滚动一行
+    screen += ROW_SIZE;
+    // 光标向下移动
+    pos += ROW_SIZE;
     set_screen();
 }
 

@@ -15,11 +15,31 @@ interrupt_handler_%1:
 %endmacro
 
 interrupt_entry:
+    ; 保存上下文寄存器信息
+    push ds
+    push es
+    push fs
+    push gs
+    pusha
 
-    mov eax, [esp] ; 获取中断向量
+    ; 4个段寄存器 和 8个 通用寄存器 eax, ebx, ecx, edx, ebp, esp, esi, edi
+    mov eax, [esp + 12 * 4] ; 获取中断向量
+
+    push eax
 
     call [handler_table + eax * 4]
 
+    add esp, 4 ; pop eax
+
+    popa
+
+    pop gs
+    pop fs
+    pop es
+    pop ds
+
+    ; push %1
+    ; error code
     add esp, 8 ; 出栈，中断返回
     iret
 
