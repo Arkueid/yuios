@@ -19,6 +19,7 @@ typedef struct gate_t
 
 typedef void * handler_t;
 
+void send_eoi(int vector);
 void interrupt_init();
 
 #endif

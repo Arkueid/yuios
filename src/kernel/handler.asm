@@ -64,6 +64,24 @@ INTERRUPT_HANDLER 0x1D, 0 ; 保留
 INTERRUPT_HANDLER 0x1E, 0 ; 保留
 INTERRUPT_HANDLER 0x1F, 0 ; 保留
 
+INTERRUPT_HANDLER 0x20, 0 ; 时钟中断
+INTERRUPT_HANDLER 0x21, 0 ; 保留
+INTERRUPT_HANDLER 0x22, 0 ; 保留
+INTERRUPT_HANDLER 0x23, 0 ; 保留
+INTERRUPT_HANDLER 0x24, 0 ; 保留
+INTERRUPT_HANDLER 0x25, 0 ; 保留
+INTERRUPT_HANDLER 0x26, 0 ; 保留
+INTERRUPT_HANDLER 0x27, 0 ; 保留
+INTERRUPT_HANDLER 0x28, 0 ; 保留
+INTERRUPT_HANDLER 0x29, 0 ; 保留
+INTERRUPT_HANDLER 0x2A, 0 ; 保留
+INTERRUPT_HANDLER 0x2B, 0 ; 保留
+INTERRUPT_HANDLER 0x2C, 0 ; 保留
+INTERRUPT_HANDLER 0x2D, 0 ; 保留
+INTERRUPT_HANDLER 0x2E, 0 ; 保留
+INTERRUPT_HANDLER 0x2F, 0 ; 保留
+
+
 section .data
 ; 上面宏定义的中断处理函数的起始地址表
 ; 一个地址占 double word (dd)
@@ -102,3 +120,19 @@ handler_entry_table:
     dd interrupt_handler_0x1E
     dd interrupt_handler_0x1F
 
+    dd interrupt_handler_0x20 ; 时钟中断
+    dd interrupt_handler_0x21
+    dd interrupt_handler_0x22
+    dd interrupt_handler_0x23
+    dd interrupt_handler_0x24
+    dd interrupt_handler_0x25
+    dd interrupt_handler_0x26
+    dd interrupt_handler_0x27
+    dd interrupt_handler_0x28
+    dd interrupt_handler_0x29
+    dd interrupt_handler_0x2A
+    dd interrupt_handler_0x2B
+    dd interrupt_handler_0x2C
+    dd interrupt_handler_0x2D
+    dd interrupt_handler_0x2E
+    dd interrupt_handler_0x2F

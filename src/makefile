@@ -50,7 +50,8 @@ $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 	$(BUILD)/kernel/task.o \
 	$(BUILD)/kernel/schedule.o \
 	$(BUILD)/kernel/handler.o \
-	$(BUILD)/kernel/interrupt.o 
+	$(BUILD)/kernel/interrupt.o \
+	$(BUILD)/lib/stdlib.o
 	
 
 	$(shell mkdir -p $(dir $@))
