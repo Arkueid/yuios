@@ -2,6 +2,7 @@
 #include <yui/debug.h>
 #include <yui/stdlib.h>
 #include <yui/io.h>
+#include <yui/rtc.h>
 
 #define CMOS_ADDR 0x70
 #define CMOS_DATA 0x71
@@ -35,23 +36,20 @@ static int month[13] = {
     (31 + 29 + 31 + 30 + 31 + 30 + 31 + 30),
     (31 + 29 + 31 + 30 + 31 + 30 + 31 + 30 + 31),
     (31 + 29 + 31 + 30 + 31 + 30 + 31 + 30 + 31 + 30),
-    (31 + 29 + 31 + 30 + 31 + 30 + 31 + 30 + 31 + 30 + 31),
-    (31 + 29 + 31 + 30 + 31 + 30 + 31 + 30 + 31 + 30 + 31 + 30),
 };
 
 time_t startup_time;
 int century;
 
-
 // 计算时间戳
 time_t mktime(tm *time)
 {
     time_t res;
-    int year; // 距 1970 年过去多少年
+    int year;                // 距 1970 年过去多少年
     if (time->tm_year >= 70) // tm_year 从 1900 开始算起
-        year = time->tm_year - 70; 
+        year = time->tm_year - 70;
     else
-        year = time->tm_year - 70 + 100;  
+        year = time->tm_year - 70 + 100;
 
     res = YEAR * year;
 
@@ -62,7 +60,7 @@ time_t mktime(tm *time)
 
     if (time->tm_mon > 2 && (year + 2) % 4)
         res -= DAY;
-    
+
     // 这个月已经过去的天数
     res += DAY * (time->tm_mday - 1);
 
@@ -71,12 +69,6 @@ time_t mktime(tm *time)
     // 这个分钟过去的秒
     res += time->tm_sec;
     return res;
-}
-
-u8 cmos_read(u8 addr)
-{
-    outb(CMOS_ADDR, CMOS_NMI | addr);
-    return inb(CMOS_DATA);
 }
 
 void time_read_bcd(tm *time)

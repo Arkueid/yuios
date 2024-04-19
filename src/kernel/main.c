@@ -6,6 +6,7 @@ extern void hang();
 extern void printk();
 extern void clock_init();
 extern void time_init();
+extern void rtc_init();
 
 void kernel_init()
 {
@@ -16,6 +17,7 @@ void kernel_init()
     // task_init();
     clock_init();
     time_init();
+    rtc_init();
 
     asm volatile("sti"); // 开中断
     hang();

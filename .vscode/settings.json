@@ -16,6 +16,7 @@
         "time.h": "c",
         "ctime": "c",
         "*.s": "c",
-        "*.def": "c"
+        "*.def": "c",
+        "rtc.h": "c"
     }
 }
