@@ -36,7 +36,7 @@ $(BUILD)/%.o: $(SRC)/%.c
 	$(shell mkdir -p $(dir $@))
 	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
 
-# 链接两个文件，这里理解为 c 与 汇编的结合？
+# 链接
 $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 	$(BUILD)/kernel/main.o \
 	$(BUILD)/kernel/io.o \
@@ -53,7 +53,6 @@ $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 	$(BUILD)/lib/stdlib.o \
 	$(BUILD)/lib/string.o \
 	$(BUILD)/lib/vsprintf.o 
-
 	
 
 	$(shell mkdir -p $(dir $@))
