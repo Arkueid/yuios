@@ -1,15 +1,10 @@
-#include <yui/yui.h>
-#include <yui/types.h>
-#include <yui/io.h>
-#include <yui/string.h>
-#include <yui/console.h>
-#include <yui/printk.h>
-#include <yui/assert.h>
-#include <yui/debug.h>
-#include <yui/global.h>
-#include <yui/task.h>
-#include <yui/interrupt.h>
-#include <yui/stdlib.h>
+extern void console_init();
+extern void gdt_init();
+extern void interrupt_init();
+extern void task_init();
+extern void hang();
+extern void printk();
+
 
 void kernel_init()
 {
@@ -17,6 +12,7 @@ void kernel_init()
     gdt_init();
     interrupt_init();
     // task_init();
+    printk("Hello, Yui\n");
 
     return;
 }

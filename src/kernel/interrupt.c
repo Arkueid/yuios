@@ -118,11 +118,11 @@ void pic_init()
 
     outb(PIC_S_CTRL, 0b00010001); // ICW1: 边沿触发，级联 8295，需要ICW4
     outb(PIC_S_DATA, 0x28);       // ICW2 起始端口号 0x28
-    outb(PIC_S_DATA, 2);          // ICW3 设置从片连接到主片的 IR2 引脚
+    outb(PIC_S_DATA, 2);          // ICW3 设置从片连接到主片的 IR2 引脚（第三个引脚）
     outb(PIC_S_DATA, 0b00000001); // ICW4 8086模式 正常EOI
 
-    // @todo
-    outb(PIC_M_DATA, 0b11111110); // 关闭所有中断
+    // @todo  中断屏蔽字 开键盘中断
+    outb(PIC_M_DATA, 0b11111111); // 关闭所有中断
     outb(PIC_S_DATA, 0b11111111); // 关闭所有中断
 }
 

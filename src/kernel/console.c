@@ -68,10 +68,12 @@ static void get_cursor()
     pos = inb(CRT_DATA_REG) << 8;
     outb(CRT_ADDR_REG, CRT_CURSOR_L);
     pos |= inb(CRT_DATA_REG);
+
+    get_screen();
+
     pos <<= 1;       // 两个字节
     pos += MEM_BASE; // 内存中的位置
 
-    get_screen();
 
     u32 delta = (pos - screen) >> 1;
     x = delta % WIDTH;
@@ -94,8 +96,8 @@ void console_clear()
     screen = MEM_BASE;
     pos = MEM_BASE;
     x = y = 0;
-    set_screen();
     set_cursor();
+    set_screen();
 
     u16 *ptr = (u16 *)MEM_BASE;
     while (ptr < (u16 *)MEM_END)
@@ -124,7 +126,7 @@ static void command_ht()
 static void scroll_up()
 {
     // 显存中还能往下写一行
-    if (screen + SCR_SIZE + ROW_SIZE < MEM_END)
+    if (screen + SCR_SIZE + ROW_SIZE >= MEM_END)
     {
 
         // 将当前屏幕复制到显存开始处
@@ -199,7 +201,6 @@ void console_write(char *buf, u32 count)
             command_bs();
             break;
         case ASCII_HT: //
-            command_bs();
             break;
         case ASCII_LF:
             command_lf();
@@ -208,7 +209,7 @@ void console_write(char *buf, u32 count)
         case ASCII_VT:
             break;
         case ASCII_FF:
-            command_ff();
+            command_lf();
             break;
         case ASCII_CR:
             command_cr();
@@ -222,7 +223,6 @@ void console_write(char *buf, u32 count)
                 x -= WIDTH;
                 pos -= ROW_SIZE;
                 command_lf();
-                command_cr();
             }
             *(char *)pos++ = ch;
             *(char *)pos++ = attr;
