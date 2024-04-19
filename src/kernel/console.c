@@ -182,7 +182,7 @@ static void command_del()
     *(u16 *)pos = erase;
 }
 
-extern start_beep();
+extern void start_beep();
 
 void console_write(char *buf, u32 count)
 {

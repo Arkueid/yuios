@@ -42,20 +42,35 @@ static int month[13] = {
 time_t startup_time;
 int century;
 
+
+// 计算时间戳
 time_t mktime(tm *time)
 {
     time_t res;
-    int year;
-    if (time->tm_year >= 70)
-        year = time->tm_year - 70;
+    int year; // 距 1970 年过去多少年
+    if (time->tm_year >= 70) // tm_year 从 1900 开始算起
+        year = time->tm_year - 70; 
     else
-        year = time->tm_year - 70 + 100;
+        year = time->tm_year - 70 + 100;  
 
     res = YEAR * year;
 
+    // 已经过去的闰年数
     res += DAY * ((year + 1) / 4);
 
     res += month[time->tm_mon] * DAY;
+
+    if (time->tm_mon > 2 && (year + 2) % 4)
+        res -= DAY;
+    
+    // 这个月已经过去的天数
+    res += DAY * (time->tm_mday - 1);
+
+    res += HOUR * time->tm_hour;
+
+    // 这个分钟过去的秒
+    res += time->tm_sec;
+    return res;
 }
 
 u8 cmos_read(u8 addr)
@@ -82,8 +97,38 @@ void time_read_bcd(tm *time)
     } while (time->tm_sec != cmos_read(CMOS_SECOND));
 }
 
+int get_yday(tm *time)
+{
+    int res = month[time->tm_mon];
+    res += time->tm_mday;
+
+    int year;
+    if (time->tm_year >= 70)
+        year = time->tm_year - 70;
+    else
+        year = time->tm_year - 70 + 100;
+
+    if ((year + 2) % 4 && time->tm_mon > 2)
+    {
+        res -= 1;
+    }
+    return res;
+}
+
 void time_read(tm *time)
 {
+    time_read_bcd(time);
+
+    time->tm_sec = bcd_to_bin(time->tm_sec);
+    time->tm_min = bcd_to_bin(time->tm_min);
+    time->tm_hour = bcd_to_bin(time->tm_hour);
+    time->tm_mday = bcd_to_bin(time->tm_mday);
+    time->tm_mon = bcd_to_bin(time->tm_mon);
+    time->tm_wday = bcd_to_bin(time->tm_wday);
+    time->tm_year = bcd_to_bin(time->tm_year);
+    time->tm_yday = get_yday(time);
+    time->tm_isdst = -1;
+    century = bcd_to_bin(century);
 }
 
 void time_init()
