@@ -81,10 +81,10 @@ void set_interrupt_mask(u32 irq, bool enable)
     {
         port = PIC_M_DATA;
     }
-    else 
+    else
     {
         port = PIC_S_DATA;
-        irq -= 8;  // 从片起始位置
+        irq -= 8; // 从片起始位置
     }
 
     if (enable)
@@ -93,7 +93,7 @@ void set_interrupt_mask(u32 irq, bool enable)
     }
     else
     {
-        outb(port, inb(port) | (1 << irq));  // 关闭对应位的中断
+        outb(port, inb(port) | (1 << irq)); // 关闭对应位的中断
     }
 }
 
@@ -106,9 +106,9 @@ void exception_handler(
     u32 ebx, u32 edx, u32 ecx, u32 eax,
     // 栈上文
     u32 gs, u32 fs, u32 es, u32 ds,
-    u32 vector0, u32 error, // 压入错误码和中断向量
+    u32 vector0, u32 error,     // 压入错误码和中断向量
     u32 eip, u32 cs, u32 eflags // 中断处理会先压入 eflags 和 ip
- )
+)
 {
     char *message = NULL;
     if (vector < 22)
@@ -132,13 +132,11 @@ void exception_handler(
     hang();
 }
 
-extern void schedule();
 
 void default_handler(int vector)
 {
     // 向中断控制器发送中断结束信息
     send_eoi(vector);
-    schedule();
 }
 
 // 初始化中断控制器
@@ -154,7 +152,6 @@ void pic_init()
     outb(PIC_S_DATA, 2);          // ICW3 设置从片连接到主片的 IR2 引脚（第三个引脚）
     outb(PIC_S_DATA, 0b00000001); // ICW4 8086模式 正常EOI
 
-    // @todo  中断屏蔽字 开键盘中断
     outb(PIC_M_DATA, 0b11111111); // 关闭所有中断
     outb(PIC_S_DATA, 0b11111111); // 关闭所有中断
 }

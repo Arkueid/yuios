@@ -40,10 +40,8 @@ $(BUILD)/%.o: $(SRC)/%.c
 $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 	$(BUILD)/kernel/main.o \
 	$(BUILD)/kernel/io.o \
-	$(BUILD)/lib/string.o \
 	$(BUILD)/kernel/console.o \
 	$(BUILD)/kernel/printk.o \
-	$(BUILD)/lib/vsprintf.o \
 	$(BUILD)/kernel/assert.o \
 	$(BUILD)/kernel/debug.o \
 	$(BUILD)/kernel/global.o \
@@ -51,7 +49,11 @@ $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 	$(BUILD)/kernel/schedule.o \
 	$(BUILD)/kernel/handler.o \
 	$(BUILD)/kernel/interrupt.o \
-	$(BUILD)/lib/stdlib.o
+	$(BUILD)/kernel/clock.o \
+	$(BUILD)/lib/stdlib.o \
+	$(BUILD)/lib/string.o \
+	$(BUILD)/lib/vsprintf.o 
+
 	
 
 	$(shell mkdir -p $(dir $@))

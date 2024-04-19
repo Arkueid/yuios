@@ -24,17 +24,23 @@ void clock_handler(int vector)
     DEBUG("clock jiffies %d ...\n", jiffies);
 }
 
+// 初始化可编程计数器
 void pit_init()
 {
+    // 00 0号计数器
+    // 11 先读写低字节，再读写高字节
+    // x10 模式2
+    // 0 表示二进制计数
+    // 递减计数
     outb(PIT_CTRL_REG, 0b00110100);
-    outb(PIT_CHAN0_REG, CLOCK_COUNTER & 0xff); 
-    outb(PIT_CHAN2_REG, (CLOCK_COUNTER >> 8) & 0xff);
+    outb(PIT_CHAN0_REG, CLOCK_COUNTER & 0xff);
+    outb(PIT_CHAN0_REG, (CLOCK_COUNTER >> 8) & 0xff);
 }
 
+// 初始化时钟
 void clock_init()
 {
     pit_init();
-
     set_interrupt_handler(IRQ_CLOCK, clock_handler);
-    set_intterupt_handler(IRQ_CLOCK, true);
+    set_interrupt_mask(IRQ_CLOCK, true);
 }
