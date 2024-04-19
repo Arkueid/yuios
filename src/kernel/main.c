@@ -14,5 +14,6 @@ void kernel_init()
     // task_init();
     printk("Hello, Yui\n");
 
-    return;
+    asm volatile("sti"); // 开中断
+    hang();
 }

@@ -8,6 +8,9 @@
         "assert.h": "c",
         "stdarg.h": "c",
         "task.h": "c",
-        "interrupt.h": "c"
+        "interrupt.h": "c",
+        "debug.h": "c",
+        "*.inc": "c",
+        "cassert": "c"
     }
 }

@@ -2,6 +2,7 @@
 #include <yui/global.h>
 #include <yui/debug.h>
 #include <yui/printk.h>
+#include <yui/assert.h>
 #include <yui/io.h>
 #include <yui/stdlib.h>
 
@@ -61,6 +62,38 @@ void send_eoi(int vector)
     {
         outb(PIC_M_CTRL, PIC_EOI);
         outb(PIC_S_CTRL, PIC_EOI);
+    }
+}
+
+// 设置中断处理函数
+void set_interrupt_handler(u32 irq, handler_t handler)
+{
+    assert(irq >= 0 && irq < 16);
+    handler_table[IRQ_MASTER_NR + irq] = handler;
+}
+
+// 设置对应是否开启
+void set_interrupt_mask(u32 irq, bool enable)
+{
+    assert(irq >= 0 && irq < 16);
+    u16 port;
+    if (irq < 8)
+    {
+        port = PIC_M_DATA;
+    }
+    else 
+    {
+        port = PIC_S_DATA;
+        irq -= 8;  // 从片起始位置
+    }
+
+    if (enable)
+    {
+        outb(port, inb(port) & ~(1 << irq));
+    }
+    else
+    {
+        outb(port, inb(port) | (1 << irq));  // 关闭对应位的中断
     }
 }
 
