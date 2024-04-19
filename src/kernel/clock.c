@@ -12,16 +12,47 @@
 #define CLOCK_COUNTER (OSCILLATOR / HZ)
 #define JIFFY (1000 / HZ)
 
+#define SPEAKER_REG 0x61
+#define BEEP_HZ 440
+#define BEEP_CONTINUE (OSCILLATOR / BEEP_HZ)
+
 u32 volatile jiffies = 0;
 u32 jiffy = JIFFY;
+
+u32 volatile beeping = 0;
+
+void start_beep()
+{
+    if (!beeping)
+    {
+        outb(SPEAKER_REG, inb(SPEAKER_REG) | 0b11);
+    }
+    beeping = jiffies + 5;
+}
+
+void stop_beeping()
+{
+    if (beeping && jiffies > beeping)
+    {
+        outb(SPEAKER_REG, inb(SPEAKER_REG) & 0xfc);
+        beeping = 0;
+    }
+}
 
 void clock_handler(int vector)
 {
     assert(vector == 0x20);
     send_eoi(vector);
 
+    if (jiffies % 200 == 0)
+    {
+        start_beep();
+    }
+
     jiffies++;
     DEBUG("clock jiffies %d ...\n", jiffies);
+
+    stop_beeping();
 }
 
 // 初始化可编程计数器

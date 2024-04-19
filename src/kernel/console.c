@@ -182,6 +182,8 @@ static void command_del()
     *(u16 *)pos = erase;
 }
 
+extern start_beep();
+
 void console_write(char *buf, u32 count)
 {
     char ch;
@@ -195,7 +197,7 @@ void console_write(char *buf, u32 count)
         case ASCII_ENQ:
             break;
         case ASCII_BEL:
-            // \todo \a
+            start_beep();
             break;
         case ASCII_BS: // \b
             command_bs();
