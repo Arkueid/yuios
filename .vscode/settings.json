@@ -11,6 +11,11 @@
         "interrupt.h": "c",
         "debug.h": "c",
         "*.inc": "c",
-        "cassert": "c"
+        "cassert": "c",
+        "stdlib.h": "c",
+        "time.h": "c",
+        "ctime": "c",
+        "*.s": "c",
+        "*.def": "c"
     }
 }

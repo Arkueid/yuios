@@ -5,6 +5,7 @@ extern void task_init();
 extern void hang();
 extern void printk();
 extern void clock_init();
+extern void time_init();
 
 void kernel_init()
 {

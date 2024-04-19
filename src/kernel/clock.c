@@ -7,9 +7,9 @@
 #define PIT_CHAN2_REG 0x42
 #define PIT_CTRL_REG 0x43
 
-#define HZ 100
-#define OSCILLATOR 1193182 // 震荡器频率
-#define CLOCK_COUNTER (OSCILLATOR / HZ)
+#define HZ 100  // 每秒产生时钟中断的次数
+#define OSCILLATOR 1193182 // 震荡器1s内产生的脉冲数
+#define CLOCK_COUNTER (OSCILLATOR / HZ) // 计数器产生一次脉冲所需的振荡器脉冲次数
 #define JIFFY (1000 / HZ)
 
 #define SPEAKER_REG 0x61
