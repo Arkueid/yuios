@@ -79,17 +79,19 @@ void memory_map_init()
     // 初始化物理内存数组
     memory_map = (u8 *)memory_base;
 
+    // 计算物理内存数组占用的页数，一页用一个字节来管理
     memory_map_pages = div_round_up(total_pages, PAGE_SIZE);
 
     free_pages -= memory_map_pages;
 
-    // 从零开始的位置分配一部分内存
+    // 初始化内存数组为0
     memset((void *)memory_map, 0, memory_map_pages * PAGE_SIZE);
 
     // 前 1M 的内存位置 以及 物理内存数组已占用的页
     start_page = IDX(MEMORY_BASE) + memory_map_pages;
     for (size_t i = 0; i < start_page; i ++)
     {
+        // 内存数组对应的内存不能使用，引用置1
         memory_map[i] = 1;
     }
     
@@ -113,9 +115,42 @@ static u32 get_page()
     panic("Out of Memory!!!");
 }
 
+
+// 释放一页物理内存
 static void put_page(u32 addr)
 {
     ASSERT_PAGE(addr);  // 传入的地址是页的起始地址，页大小的整数倍
 
     u32 idx = IDX(addr);
+
+    assert(idx >= start_page && idx < total_pages);
+
+    // @todo 保证至少有一个引用
+    assert(memory_map[idx] >= 1);
+
+    // 物理引用减一
+    memory_map[idx]--;
+
+    // 若为空，则空闲页+1
+    if (!memory_map[idx])
+    {
+        free_pages++;
+    }
+
+    assert(free_pages > 0 && free_pages < total_pages);
+    DEBUG("PUT page 0x%p\n", addr);
+}
+
+void memory_test()
+{
+    u32 pages[10];
+    for (size_t i = 0; i < 10; i ++)
+    {
+        pages[i] = get_page();
+    }
+
+    for (size_t i = 0; i < 10; i ++)
+    {
+        put_page(pages[i]);
+    }
 }

@@ -29,6 +29,7 @@ u8 bin_to_bcd(u8 value)
 
 // 计算 num 分成 size
 u32 div_round_up(u32 num, u32 size)
-{
-    return (num * size -1) / size;
+{   
+    // 向上取整
+    return (num + size -1) / size;
 }
