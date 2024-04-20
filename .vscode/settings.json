@@ -17,6 +17,8 @@
         "ctime": "c",
         "*.s": "c",
         "*.def": "c",
-        "rtc.h": "c"
+        "rtc.h": "c",
+        "yui.h": "c",
+        "memory.h": "c"
     }
 }

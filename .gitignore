@@ -4,6 +4,7 @@
 *.img
 *.map
 *.out
+*.vmdk
 
 build
 bochs/pkg
