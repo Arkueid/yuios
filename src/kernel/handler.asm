@@ -7,7 +7,7 @@ section .text
 
 %macro INTERRUPT_HANDLER 2
 interrupt_handler_%1:
-%ifn %2
+%ifn %2  ; 参数2 是错误码，部分中断会使用错误码
     push 0x20222202
 %endif
     push %1 ; 压入中断向量，跳转到中断入口
@@ -92,7 +92,7 @@ INTERRUPT_HANDLER 0x24, 0 ; 保留
 INTERRUPT_HANDLER 0x25, 0 ; 保留
 INTERRUPT_HANDLER 0x26, 0 ; 保留
 INTERRUPT_HANDLER 0x27, 0 ; 保留
-INTERRUPT_HANDLER 0x28, 0 ; 保留
+INTERRUPT_HANDLER 0x28, 0 ; rtc 时钟中断 
 INTERRUPT_HANDLER 0x29, 0 ; 保留
 INTERRUPT_HANDLER 0x2A, 0 ; 保留
 INTERRUPT_HANDLER 0x2B, 0 ; 保留

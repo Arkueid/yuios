@@ -1,3 +1,6 @@
+// rtc real time clock
+// 定时器，计算机中的秒表
+// 定时任务、实时系统的可靠性
 #include <yui/rtc.h>
 #include <yui/time.h>
 #include <yui/assert.h>
@@ -19,8 +22,6 @@
 #define CMOS_D 0x0d
 #define CMOS_NMI 0x80
 
-
-
 u8 cmos_read(u8 addr)
 {
     outb(CMOS_ADDR, CMOS_NMI | addr);
@@ -32,7 +33,6 @@ void cmos_write(u8 addr, u8 value)
     outb(CMOS_ADDR, CMOS_NMI | addr);
     outb(CMOS_DATA, value);
 }
-
 
 // 设置secs秒后发生时钟中断
 void set_alarm(u32 secs)
@@ -85,20 +85,18 @@ void rtc_handler(int vector)
 
     cmos_read(CMOS_C); // 读取C寄存器以允许继续中断
 
-    set_alarm(2);
+    // set_alarm(2);
 
     DEBUG("rtc handler: %d\n", counter++);
 }
 
 void rtc_init()
 {
-    u8 prev;
+    cmos_write(CMOS_B, 0b01000010); // 打开周期性中断
+    // cmos_write(CMOS_B, 0b00100010); // 第五位，打开闹钟中断
+    cmos_read(CMOS_C);              // 读取C寄存器，以允许CMOS中断
 
-    // cmos_write(CMOS_B, 0b01000010); // 打开周期性中断
-    cmos_write(CMOS_B, 0b00100010);  // 第五位，打开闹钟中断
-    cmos_read(CMOS_C); // 读取C寄存器，以允许CMOS中断
-
-    set_alarm(2);
+    // set_alarm(2);
 
     outb(CMOS_A, (inb(CMOS_A) & 0xf) | 0b1110); // @todo 111
 

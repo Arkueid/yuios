@@ -7,6 +7,7 @@ extern void printk();
 extern void clock_init();
 extern void time_init();
 extern void rtc_init();
+extern void set_alarm();
 
 void kernel_init()
 {

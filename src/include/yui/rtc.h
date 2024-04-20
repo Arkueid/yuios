@@ -4,6 +4,7 @@
 #include <yui/types.h>
 
 
+void set_alaram(u32 secs);
 // 读CMOS寄存器的值
 u8 cmos_read(u8 addr);
 // 写CMOS寄存器
