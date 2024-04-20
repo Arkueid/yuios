@@ -52,6 +52,7 @@ $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 	$(BUILD)/kernel/clock.o \
 	$(BUILD)/kernel/time.o \
 	$(BUILD)/kernel/rtc.o \
+	$(BUILD)/kernel/memory.o \
 	$(BUILD)/lib/stdlib.o \
 	$(BUILD)/lib/string.o \
 	$(BUILD)/lib/vsprintf.o 
@@ -77,6 +78,12 @@ $(BUILD)/master.img: $(BUILD)/boot/boot.bin \
 	dd if=$(BUILD)/boot/boot.bin of=$@ bs=512 count=1 conv=notrunc
 	dd if=$(BUILD)/boot/loader.bin of=$@ bs=512 count=4 seek=2 conv=notrunc
 	dd if=$(BUILD)/system.bin of=$@ bs=512 count=200 seek=10 conv=notrunc
+
+$(BUILD)/master.vmdk: $(BUILD)/master.img
+	qemu-img convert -O vmdk $< $@
+
+.PHONY: vmdk
+vmdk: $(BUILD)/master.vmdk
 
 .PHONY: clean
 clean:

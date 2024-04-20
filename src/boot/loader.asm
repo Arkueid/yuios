@@ -33,7 +33,7 @@ detect_memory:
     ; 指针指向下一个结构体
     add di, cx
 
-    inc word [ards_count]
+    inc dword [ards_count]
 
     cmp ebx, 0
     jnz .next
@@ -110,6 +110,11 @@ protected_mode:
     mov bl, 200
 
     call read_disk
+
+
+    ; 兼容grub，方便引导
+    mov eax, 0x20220205 ; 内核魔数
+    mov ebx, ards_count ; ards 数量指针
 
     jmp dword code_selector:0x10000
 
@@ -218,5 +223,5 @@ gdt_data: ; 数据段
 gdt_end:
 
 ards_count:
-    dw 0
+    dd 0
 ards_buffer:

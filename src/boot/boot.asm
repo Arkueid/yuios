@@ -25,13 +25,17 @@ mov bl, 4 ; 扇区数量
 call read_disk ; 读取内核加载器
 
 cmp word [0x1000], 0x55aa
-jnz error
+jnz error_handle
 
 jmp 0:0x1002
 
-
 ; 阻塞
 jmp $
+
+error_handle:
+    mov si, error
+    call print
+    jmp $
 
 
 ; 读磁盘，需要与磁盘控制器的端口互传数据，有等待时间
