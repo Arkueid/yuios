@@ -61,7 +61,7 @@
             "program": "${workspaceFolder}/build/kernel.bin",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}$/src",
+            "cwd": "${workspaceFolder}/src",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",

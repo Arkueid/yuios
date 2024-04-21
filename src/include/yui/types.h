@@ -16,6 +16,7 @@
 // 用于定义特殊的结构体
 #define _packed __attribute__ ((packed)) // 用于定义特殊的结构体
 
+#define _inline __attribute__ ((always_inline)) inline
 // 用于忽略函数的栈帧
 #define _ofp __attribute__ ((optimize("omit-frame-pointer")))
 
@@ -31,6 +32,6 @@ typedef unsigned int u32;
 typedef unsigned long long u64;
 
 typedef u32 time_t;
-
+typedef u32 index_t;
 #endif
 
