@@ -10,6 +10,7 @@ extern void memory_map_init();
 extern void memory_test();
 extern void mapping_init();
 extern void memory_test();
+extern void bitmap_tests();
 
 void kernel_init()
 {
@@ -24,7 +25,8 @@ void kernel_init()
     // asm volatile("sti"); // 开中断
     printk("Hello, Yui\n");
 
-    memory_test();
+    // memory_test();
+    bitmap_tests();
 
     hang();
 }

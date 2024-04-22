@@ -55,7 +55,8 @@ $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 	$(BUILD)/kernel/memory.o \
 	$(BUILD)/lib/stdlib.o \
 	$(BUILD)/lib/string.o \
-	$(BUILD)/lib/vsprintf.o 
+	$(BUILD)/lib/vsprintf.o \
+	$(BUILD)/lib/bitmap.o
 	
 
 	$(shell mkdir -p $(dir $@))

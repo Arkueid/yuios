@@ -11,7 +11,7 @@
 
 // 页大小为 0x1000
 #define IDX(addr) ((u32)addr >> 12)            // 获取 addr 的页索引
-#define DIDX(addr) (((u32)addr >> 22) & 0x3ff)           // 获取页目录索引
+#define DIDX(addr) (((u32)addr >> 22) & 0x3ff) // 获取页目录索引
 #define TIDX(addr) (((u32)addr >> 12) & 0x3ff) // 获取页表索引
 #define PAGE(idx) ((u32)idx << 12)             // 获取页索引 idx 对应页的内存开始位置
 
@@ -233,14 +233,13 @@ void mapping_init()
 
 static page_entry_t *get_pde()
 {
-    return (page_entry_t *)(0xfffff000);
+    return (page_entry_t *)(0xfffff000); // 线性地址
 }
 
 static page_entry_t *get_pte(u32 vaddr)
 {
     return (page_entry_t *)(0xffc00000 | (DIDX(vaddr)) << 12);
 }
-
 
 // 刷新快表
 static void flush_tlb(u32 vaddr)
@@ -250,19 +249,20 @@ static void flush_tlb(u32 vaddr)
 
 void memory_test()
 {
-    
-    BMB;
-    
-    u32 vaddr = 0x4000000; // 虚拟地址
-    u32 paddr = 0x1400000;  // 物理地址
-    u32 table = 0x900000;  // 页表地址
 
+    BMB;
+
+    u32 vaddr = 0x4000000; // 线性地址
+    u32 paddr = 0x1400000; // 物理地址
+    u32 table = 0x900000;  // 物理地址
     // 内存从高地址开始
+    // 0x3ff
+    // 0x3ff
     // 0xfffff000
     page_entry_t *pde = get_pde();
 
     // 高10位获取页目录 表项
-    // 0xfffff010
+    // 0x40f
     page_entry_t *dentry = &pde[DIDX(vaddr)];
     entry_init(dentry, IDX(table));
 
@@ -275,7 +275,7 @@ void memory_test()
 
     BMB;
 
-    char *ptr = (char*) (vaddr);
+    char *ptr = (char *)(vaddr);
     ptr[0] = 'a';
 
     entry_init(tentry, IDX(0x1500000));
