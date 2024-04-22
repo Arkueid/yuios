@@ -132,6 +132,38 @@ void exception_handler(
     hang();
 }
 
+// 关中断，并返回之前 IF 位的值
+bool interrupt_disable()
+{
+    asm volatile(
+        "pushfl\n"        // 将当前eflags圧入栈中
+        "cli\n"           // 清除IF位，此时外中断已经被屏蔽
+        "popl %eax\n"     // 将刚才圧入的 eflags 弹出到eax
+        "shrl $9, %eax\n" // 得到 eflags的第10位 if 位
+        "andl $1, %eax\n" // 第10位以后的截断丢弃
+    );
+}
+
+// 获得 IF 位的值
+bool get_interrupt_state()
+{
+    asm volatile(
+        "pushfl\n"        // 圧入eflags
+        "popl %eax\n"     // 获取eflags的值
+        "shrl $9, %eax\n" // 获取第10位
+        "andl $1, %eax\n" // 丢弃其它位
+    );
+}
+
+// 设置 IF 位
+void set_interrupt_state(bool state)
+{
+    if (state)
+        asm volatile("sti\n");
+    else
+        asm volatile("cli\n");
+}
+
 
 void default_handler(int vector)
 {

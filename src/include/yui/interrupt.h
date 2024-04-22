@@ -45,4 +45,10 @@ void interrupt_init();
 void set_interrupt_handler(u32 irq, handler_t handler);
 void set_interrupt_mask(u32 irq, bool enable);
 
+// 清除IF位，返回设置之前的值
+bool interrupt_disable();
+// 获得IF位
+bool get_interrupt_state();
+// 设置IF位
+void set_interrupt_state(bool state);  
 #endif

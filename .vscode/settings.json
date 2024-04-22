@@ -20,6 +20,6 @@
         "rtc.h": "c",
         "yui.h": "c",
         "memory.h": "c",
-        "bitmap.h": "c"
+        "bitmap.h": "c",
     }
 }

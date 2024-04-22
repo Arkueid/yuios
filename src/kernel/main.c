@@ -7,10 +7,23 @@ extern void time_init();
 extern void rtc_init();
 extern void set_alarm();
 extern void memory_map_init();
-extern void memory_test();
 extern void mapping_init();
-extern void memory_test();
-extern void bitmap_tests();
+
+#include <yui/types.h>
+
+extern bool interrupt_disable();
+extern void set_interrupt_state(bool state);
+
+void interrupt_test()
+{
+    // 关中断
+    bool state = interrupt_disable();
+
+    // critical segment
+
+    // 恢复中断状态
+    set_interrupt_state(state);
+}
 
 void kernel_init()
 {
@@ -22,11 +35,11 @@ void kernel_init()
     // clock_init();
     // time_init();
     // rtc_init();
-    // asm volatile("sti"); // 开中断
-    printk("Hello, Yui\n");
+    asm volatile("sti"); // 开中断
 
-    memory_test();
-    // bitmap_tests();
+    interrupt_test();
+
+    printk("Hello, Yui\n");
 
     hang();
 }
