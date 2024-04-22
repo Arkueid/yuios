@@ -6,6 +6,16 @@
 #define PAGE_SIZE 0x1000     // 一页的大小
 #define MEMORY_BASE 0x100000 // 1M，可用内存开始的位置
 
+// 在内存中找两个页，存放页表和内核页
+// 内核页目录
+#define KERNEL_PAGE_DIR 0x1000
+
+// 内核使用的页表
+static u32 KERNEL_PAGE_TABLE[] = {
+    0x2000,
+    0x3000,
+};
+
 typedef struct page_entry_t
 {
     u8 present : 1;  // 在内存中

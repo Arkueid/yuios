@@ -2,6 +2,7 @@
 #include <yui/interrupt.h>
 #include <yui/assert.h>
 #include <yui/debug.h>
+#include <yui/task.h>
 
 #define PIT_CHAN0_REG 0x40
 #define PIT_CHAN2_REG 0x42
@@ -16,6 +17,8 @@
 #define BEEP_HZ 440
 #define BEEP_CONTINUE (OSCILLATOR / BEEP_HZ)
 
+// 系统从开机到现在过去的时间间隔
+// or 经历的时钟中断次数
 u32 volatile jiffies = 0;
 u32 jiffy = JIFFY;
 
@@ -30,7 +33,7 @@ void start_beep()
     beeping = jiffies + 5;
 }
 
-void stop_beeping()
+void stop_beep()
 {
     if (beeping && jiffies > beeping)
     {
@@ -39,16 +42,28 @@ void stop_beeping()
     }
 }
 
+// 时钟中断处理函数
 void clock_handler(int vector)
 {
     assert(vector == 0x20);
     send_eoi(vector);
+    stop_beep();
 
 
     jiffies++;
     // DEBUG("clock jiffies %d ...\n", jiffies);
+    task_t *task = running_task();
 
-    stop_beeping();
+    // 更新进程最近一次运行的时刻
+    task->jiffies = jiffies;
+    // 递减时间片
+    task->ticks --;
+    // 时间片为0，重新进行调度
+    if (!task->ticks)
+    {
+        task->ticks = task->prioriy;
+        schedule();
+    }
 }
 
 // 初始化可编程计数器

@@ -19,16 +19,6 @@
 
 #define ASSERT_PAGE(addr) assert((addr & 0xfff) == 0)
 
-// 在内存中找两个页，存放页表和内核页
-// 内核页目录
-#define KERNEL_PAGE_DIR 0x1000
-
-// 内核使用的页表
-static u32 KERNEL_PAGE_TABLE[] = {
-    0x2000,
-    0x3000,
-};
-
 // 内核位图数据存放位置
 #define KERNEL_MAP_BITS 0x4000
 
