@@ -5,15 +5,17 @@
 #include <yui/assert.h>
 #include <yui/stdlib.h>
 #include <yui/string.h>
+#include <yui/bitmap.h>
 
 #define ZONE_VALID 1    // ards 可用区域
 #define ZONE_RESERVED 2 // ards 不可用区域
 
 // 页大小为 0x1000
-#define IDX(addr) ((u32)addr >> 12)            // 获取 addr 的页索引
+#define IDX(addr) ((u32)addr >> 12)            // 页框地址转页索引
+#define PAGE(idx) ((u32)idx << 12)             // 页索引转页框地址
 #define DIDX(addr) (((u32)addr >> 22) & 0x3ff) // 获取页目录索引
 #define TIDX(addr) (((u32)addr >> 12) & 0x3ff) // 获取页表索引
-#define PAGE(idx) ((u32)idx << 12)             // 获取页索引 idx 对应页的内存开始位置
+
 
 #define ASSERT_PAGE(addr) assert((addr & 0xfff) == 0)
 
@@ -26,6 +28,9 @@ static u32 KERNEL_PAGE_TABLE[] = {
     0x2000,
     0x3000,
 };
+
+// 内核位图数据存放位置
+#define KERNEL_MAP_BITS 0x4000
 
 // 一个页表映射4M空间，总共两个页表
 // 这个写法只是最终结果正确
@@ -43,7 +48,13 @@ static u32 memory_size = 0; // 可用内存大小
 static u32 total_pages = 0; // 所有内存页数
 static u32 free_pages = 0;  // 空闲内存页数
 
+bitmap_t kernel_bitmap;
+
 #define used_pages (total_pages - free_pages) // 已用页数
+
+static u32 start_page = 0;   // 可分配物理内存起始位置
+static u8 *memory_map;       // 物理内存数组
+static u32 memory_map_pages; // 物理内存数组占用的页数
 
 void memory_init(u32 magic, u32 addr)
 {
@@ -90,11 +101,11 @@ void memory_init(u32 magic, u32 addr)
         panic("System memory is %dM too small, at least %dM needed\n",
               memory_size / MEMORY_BASE, KERNEL_MEMORY_SIZE / MEMORY_BASE);
     }
-}
 
-static u32 start_page = 0;   // 可分配物理内存起始位置
-static u8 *memory_map;       // 物理内存数组
-static u32 memory_map_pages; // 物理内存数组占用的页数
+    u32 length = (IDX(KERNEL_MEMORY_SIZE) - IDX(MEMORY_BASE)) / 8;
+    bitmap_init(&kernel_bitmap, (char *)KERNEL_MAP_BITS, length, IDX(MEMORY_BASE));
+    bitmap_scan(&kernel_bitmap, memory_map_pages);
+}
 
 void memory_map_init()
 {
@@ -162,7 +173,7 @@ static void put_page(u32 addr)
     DEBUG("PUT page 0x%p\n", addr);
 }
 
-u32 _inline get_cr3()
+u32 get_cr3()
 {
     asm volatile("movl %cr3, %eax\n");
 }
@@ -247,43 +258,69 @@ static void flush_tlb(u32 vaddr)
     asm volatile("invlpg (%0)" ::"r"(vaddr) : "memory");
 }
 
+static u32 scan_page(bitmap_t * map, u32 count)
+{
+    assert(count > 0);
+    index_t index = bitmap_scan(map, count);
+
+    if (index == EOF)
+    {
+        panic("Scan Page failed!!!\n");
+    }
+
+    u32 addr = PAGE(index);
+
+    DEBUG("Scan page 0x%p count %d\n", addr, count);
+    return addr;
+}
+
+static void reset_page(bitmap_t *map, u32 addr, u32 count)
+{
+    ASSERT_PAGE(addr);
+
+    assert(count > 0);
+
+    u32 index = IDX(addr);
+
+    for (size_t i = 0; i < count; i ++)
+    {
+        assert(bitmap_test(map, index + i));
+        bitmap_set(map, index + i, 0);
+    }
+}
+
+u32 alloc_kpage(u32 count)
+{
+    assert(count > 0);
+
+    u32 vaddr = scan_page(&kernel_bitmap, count);
+    DEBUG("ALLOC kernel pages 0x%p count %d\n", vaddr, count);
+    return vaddr;
+}
+
+void free_kpage(u32 vaddr, u32 count)
+{
+    ASSERT_PAGE(vaddr);
+    assert(count > 0);
+
+    reset_page(&kernel_bitmap, vaddr, count);
+    DEBUG("FREE kernel pages 0x%p count %d\n", vaddr, count);
+}
+
 void memory_test()
 {
+    u32 *pages = (u32 *) 0x200000;
 
+    u32 count = 0x6fe;
+    for (size_t i = 0; i < count; i ++)
+    {
+        pages[i] = alloc_kpage(1);
+        DEBUG("0x%x\n", i);
+    }
     BMB;
 
-    u32 vaddr = 0x4000000; // 线性地址
-    u32 paddr = 0x1400000; // 物理地址
-    u32 table = 0x900000;  // 物理地址
-    // 内存从高地址开始
-    // 0x3ff
-    // 0x3ff
-    // 0xfffff000
-    page_entry_t *pde = get_pde();
-
-    // 高10位获取页目录 表项
-    // 0x40f
-    page_entry_t *dentry = &pde[DIDX(vaddr)];
-    entry_init(dentry, IDX(table));
-
-    // 0xffc04000
-    page_entry_t *pte = get_pte(vaddr);
-
-    page_entry_t *tentry = &pte[TIDX(vaddr)];
-
-    entry_init(tentry, IDX(paddr));
-
-    BMB;
-
-    char *ptr = (char *)(vaddr);
-    ptr[0] = 'a';
-
-    entry_init(tentry, IDX(0x1500000));
-    flush_tlb(vaddr);
-
-    BMB;
-
-    ptr[0] = 'b';
-
-    BMB;
+    for (size_t i = 0; i < count; i ++)
+    {
+        free_kpage(pages[i], 1);
+    }
 }

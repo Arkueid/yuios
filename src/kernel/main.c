@@ -25,8 +25,8 @@ void kernel_init()
     // asm volatile("sti"); // 开中断
     printk("Hello, Yui\n");
 
-    // memory_test();
-    bitmap_tests();
+    memory_test();
+    // bitmap_tests();
 
     hang();
 }

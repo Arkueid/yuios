@@ -18,7 +18,7 @@ void bitmap_init(bitmap_t *map, char *bits, u32 length, u32 start)
     bitmap_make(map, bits, length, start);
 }
 
-// 测试某一位是否为0
+// 测试某一位是否为1
 bool bitmap_test(bitmap_t *map, index_t index)
 {
     assert(index >= map->offset);
@@ -41,12 +41,13 @@ void bitmap_set(bitmap_t *map, index_t index, bool value)
 {
     assert(value == 0 || value == 1);
 
-    assert(index >= map->offset);
+    assert(index >= map->length);
 
-    u32 bytes = index / 8;
-    u8 bits = index % 8;
+    index_t idx = index - map->offset;
 
-    assert(bytes < map->length);
+    u32 bytes = idx / 8;
+    u8 bits = idx % 8;
+
 
     if (value)
     {
@@ -88,39 +89,17 @@ int bitmap_scan(bitmap_t *map, u32 count)
         }
     }
 
+    if (start == EOF)
+        return EOF;
+
     bits_left = count;
     next_bit = start;
 
-    if (start != EOF)
+    while (bits_left--)
     {
-        while (bits_left--)
-        {
-            bitmap_set(map, next_bit, true);
-            next_bit ++;
-        }
+        bitmap_set(map, map->offset + next_bit, true);
+        next_bit++;
     }
 
     return start + map->offset;
-}
-
-// 位图测试
-#include <yui/debug.h>
-
-#define LEN 2
-u8 buf[LEN];
-bitmap_t map;
-
-void bitmap_tests()
-{
-    bitmap_init(&map, buf, LEN, 0);
-    for (size_t i = 0; i < 33; i ++)
-    {
-        index_t idx = bitmap_scan(&map, 1);
-        if (idx == EOF)
-        {
-            DEBUG("bitmap test finished\n");
-            break;
-        }
-        DEBUG("%d\n", idx);
-    }
 }

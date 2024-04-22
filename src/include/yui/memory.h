@@ -24,4 +24,11 @@ typedef struct page_entry_t
 u32 get_cr3();
 void set_cr3(u32 pde);
 
+
+// 分配count个连续内核页
+u32 alloc_kpage(u32 count);
+
+// 释放count个连续内核页
+void free_kpage(u32 vaddr, u32 count);
+
 #endif
