@@ -52,7 +52,7 @@ static task_t *task_search(task_state_t state)
         if (current == ptr)
             continue;
         if (task == NULL ||              // 任务的状态满足要求
-            task->ticks < ptr->ticks ||  // 选取剩余执行时间最大的
+            task->ticks < ptr->ticks ||  // 此处，就绪队列中表示优先级；执行态的进程则比较剩余执行时间最大的
             ptr->jiffies < task->jiffies // 选取最晚进入队列的
         )
             task = ptr;
