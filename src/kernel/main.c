@@ -8,6 +8,7 @@ extern void rtc_init();
 extern void set_alarm();
 extern void memory_map_init();
 extern void mapping_init();
+extern void syscall_init();
 
 #include <yui/types.h>
 extern void set_interrupt_state(bool state);
@@ -22,10 +23,10 @@ void kernel_init()
     // rtc_init();
 
     task_init();
-
-    set_interrupt_state(true);
+    // set_interrupt_state(true);
+    syscall_init();
 
     printk("Hello, Yui\n");
 
-    hang();
+    // hang();
 }

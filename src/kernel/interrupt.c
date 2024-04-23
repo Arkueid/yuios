@@ -25,6 +25,7 @@ handler_t handler_table[IDT_SIZE];
 
 // 中断函数入口地址
 extern handler_t handler_entry_table[ENTRY_SIZE];
+extern void syscall_handler();
 
 static char *messages[] = {
     "Divide Error - #DE\0",
@@ -164,7 +165,6 @@ void set_interrupt_state(bool state)
         asm volatile("cli\n");
 }
 
-
 void default_handler(int vector)
 {
     // 向中断控制器发送中断结束信息
@@ -214,6 +214,16 @@ void idt_init()
     {
         handler_table[i] = default_handler;
     }
+
+    gate_t *gate = &idt[0x80];
+    gate->offset0 = (u32)syscall_handler & 0xffff;
+    gate->offset1 = ((u32)syscall_handler >> 16) & 0xffff;
+    gate->selector = 1 << 3; // 代码段
+    gate->reserved = 0;      // 保留不用
+    gate->type = 0b1110;     // 中断门
+    gate->segment = 0;       // 系统段
+    gate->DPL = 3;           // 用户态
+    gate->present = 1;       // 有效
 
     idt_ptr.base = (u32)idt;
     idt_ptr.limit = sizeof(idt) - 1;

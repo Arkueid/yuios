@@ -29,6 +29,9 @@ interrupt_entry:
 
     call [handler_table + eax * 4]
 
+global interrupt_exit
+interrupt_exit:
+
     add esp, 4 ; pop eax
 
     popa
@@ -156,3 +159,40 @@ handler_entry_table:
     dd interrupt_handler_0x2D
     dd interrupt_handler_0x2E
     dd interrupt_handler_0x2F
+
+section .text
+
+extern syscall_check
+extern syscall_table
+global syscall_handler
+syscall_handler:
+
+    ; 校验系统调用号
+    push eax
+    call syscall_check
+    add esp, 4  ; 弹出eax
+
+    ; 对齐 与 interrupt_exit 的出栈操作对应
+    push 0x20222202
+    push 0x80
+
+    ; 保存上下文
+    push ds
+    push es
+    push fs
+    push gs
+    pusha
+
+    ; syscall_handler(ebx, ecx, edx, nr)
+    push 0x80    
+    push edx
+    push ecx
+    push ebx
+
+    call [syscall_table + eax * 4]
+
+    add esp, 12
+
+    mov dword [esp + 8 * 4], eax
+
+    jmp interrupt_exit

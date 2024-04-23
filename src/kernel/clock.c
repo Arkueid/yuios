@@ -61,6 +61,7 @@ void clock_handler(int vector)
     // 时间片为0，重新进行调度
     if (!task->ticks)
     {
+        // TODO:删除
         task->ticks = task->prioriy;
         schedule();
     }

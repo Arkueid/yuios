@@ -1,6 +1,7 @@
 #include <yui/console.h>
 #include <yui/io.h>
 #include <yui/string.h>
+#include <yui/interrupt.h>
 
 #define CRT_ADDR_REG 0x3D4 // 地址寄存器
 #define CRT_DATA_REG 0x3D5 // 数据寄存器
@@ -186,6 +187,9 @@ extern void start_beep();
 
 void console_write(char *buf, u32 count)
 {
+    bool intr = interrupt_disable();
+
+    // 以下为临界区代码
     char ch;
     while (count--)
     {
@@ -233,6 +237,8 @@ void console_write(char *buf, u32 count)
         }
         set_cursor();
     }
+
+    set_interrupt_state(intr); // 恢复之前的中断状态
 }
 
 void console_init()
