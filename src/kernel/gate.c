@@ -1,10 +1,13 @@
 #include <yui/interrupt.h>
 #include <yui/assert.h>
 #include <yui/debug.h>
+#include <yui/syscall.h>
 
 #define SYSCALL_SIZE 64
 
 handler_t syscall_table[SYSCALL_SIZE];
+
+extern void task_yield();
 
 // 检查系统调用号是否正确
 void syscall_check(u32 nr)
@@ -35,5 +38,6 @@ void syscall_init()
         syscall_table[i] = sys_default;
     }
 
-    syscall_table[0] = sys_test;
+    syscall_table[SYS_NR_TEST] = sys_test;
+    syscall_table[SYS_NR_YEILD] = task_yield;
 }

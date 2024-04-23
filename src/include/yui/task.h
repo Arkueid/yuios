@@ -53,4 +53,6 @@ task_t *running_task();
 // 任务调度
 void schedule();
 
+void task_yield();
+
 #endif

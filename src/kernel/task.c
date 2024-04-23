@@ -8,6 +8,7 @@
 #include <yui/interrupt.h>
 #include <yui/string.h>
 #include <yui/yui.h>
+#include <yui/syscall.h>
 
 extern bitmap_t kernel_bitmap;
 extern void task_switch(task_t *next);
@@ -74,6 +75,9 @@ task_t *running_task()
 // 进程调度
 void schedule()
 {
+    // 处于关中断状态
+    assert(!get_interrupt_state());
+
     task_t *current = running_task();
     // 从就绪队列中查找一个合适的进程
     task_t *next = task_search(TASK_READY);
@@ -115,7 +119,7 @@ static task_t *task_create(target_t target, const char *name, u32 priority, u32 
 
     strcpy((char *)task->name, name);
 
-    task->stack = (u32*) stack;
+    task->stack = (u32 *)stack;
     task->prioriy = priority;
     task->ticks = task->prioriy;
     task->jiffies = 0;
@@ -125,7 +129,7 @@ static task_t *task_create(target_t target, const char *name, u32 priority, u32 
     task->pde = KERNEL_PAGE_DIR;
     // 如果栈顶移动到魔数的位置，或者该处魔数被修改
     // 说明栈溢出
-    task->magic = YUI_MAGIC; 
+    task->magic = YUI_MAGIC;
 
     return task;
 }
@@ -139,34 +143,39 @@ static void task_setup()
     memset(task_table, 0, sizeof(task_table));
 }
 
+void task_yield()
+{
+    schedule();
+}
+
 u32 thread_a()
 {
     set_interrupt_state(true);
     while (true)
     {
         printk("A");
+        yeild();
     }
-    
 }
 
 u32 thread_b()
 {
     set_interrupt_state(true);
-        while (true)
+    while (true)
     {
         printk("B");
+        yeild();
     }
-    
 }
 
 u32 thread_c()
 {
     set_interrupt_state(true);
-        while (true)
+    while (true)
     {
         printk("C");
+        yeild();
     }
-    
 }
 
 void task_init()

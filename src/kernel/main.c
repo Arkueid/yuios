@@ -23,10 +23,11 @@ void kernel_init()
     // rtc_init();
 
     task_init();
-    // set_interrupt_state(true);
     syscall_init();
+
+    set_interrupt_state(true);
 
     printk("Hello, Yui\n");
 
-    // hang();
+    hang();
 }
