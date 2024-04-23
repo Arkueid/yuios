@@ -9,6 +9,7 @@ extern void set_alarm();
 extern void memory_map_init();
 extern void mapping_init();
 extern void syscall_init();
+extern void list_test();
 
 #include <yui/types.h>
 extern void set_interrupt_state(bool state);
@@ -28,6 +29,8 @@ void kernel_init()
     set_interrupt_state(true);
 
     printk("Hello, Yui\n");
+
+    list_test();
 
     hang();
 }
