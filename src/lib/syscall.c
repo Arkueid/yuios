@@ -10,11 +10,14 @@ static _inline u32 _syscall0(u32 nr)
     return ret;
 }
 
+
+// 系统调用-test
 u32 test()
 {
     return _syscall0(SYS_NR_TEST);
 }
 
+// 系统调用-yeild
 void yeild()
 {
     _syscall0(SYS_NR_YEILD);

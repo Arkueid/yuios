@@ -59,6 +59,18 @@ list_node_t *list_popback(list_t *list)
     return node;
 }
 
+bool list_search(list_t *list, list_node_t *node)
+{
+    list_node_t *next = list->head.next;
+
+    while (next != &list->tail)
+    {
+        if (next == node)
+            return true;
+        next = next->next;
+    }
+    return false;
+}
 void list_remove(list_node_t *node)
 {
     assert(node->prev != NULL);
@@ -72,7 +84,7 @@ void list_remove(list_node_t *node)
 
 bool list_empty(list_t *list)
 {
-    return (&list->head.next == &list->tail);
+    return (list->head.next == &list->tail);
 }
 
 u32 list_size(list_t *list)
@@ -86,10 +98,4 @@ u32 list_size(list_t *list)
         next = next->next;
     }
     return size;
-}
-
-// TODO:列表测试，后续应删除
-void list_test()
-{
-
 }

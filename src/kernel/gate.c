@@ -2,6 +2,7 @@
 #include <yui/assert.h>
 #include <yui/debug.h>
 #include <yui/syscall.h>
+#include <yui/task.h>
 
 #define SYSCALL_SIZE 64
 
@@ -24,10 +25,20 @@ static void sys_default()
     panic("syscall not implemented!!!");
 }
 
+task_t *task = NULL;
+
+
+// 系统调用-test
 static u32 sys_test(u32 ebx, u32 ecx, u32 edx, u32 nr)
 {
     DEBUG("syscall test: ebx=0x%p, ecx=0x%p, edx=0x%p, nr=0x%p\n",
           ebx, ecx, edx, nr);
+
+    if (!task)
+    {
+        task = running_task();
+        task_block(task, NULL, TASK_BLOCKED);
+    }
     return 255;
 }
 

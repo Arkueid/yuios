@@ -17,6 +17,7 @@ extern void task_switch(task_t *next);
 
 // 存放进程指针的数组
 static task_t *task_table[NR_TASKS];
+static list_t block_list;  // 默认阻塞链表
 
 // 从 task_table 里获得一个空闲任务
 static task_t *get_free_task()
@@ -70,6 +71,35 @@ task_t *running_task()
         "andl $0xfffff000, %eax\n");
     // eax存放返回地址
     // 相当于 return task_t
+}
+
+/// @brief 阻塞进程
+/// @param task 进程控制块指针
+/// @param blist 阻塞队列，为Null则使用默认阻塞队列
+/// @param state 进程状态
+void task_block(task_t *task, list_t *blist, task_state_t state)
+{
+    assert(!get_interrupt_state());  // 进程阻塞需要关中断
+    assert(task->node.next == NULL);  // 该链表不在阻塞队列中
+    assert(task->node.prev == NULL);
+
+    if (blist == NULL)
+    {
+        blist = &block_list;  // 未给出阻塞队列则使用默认阻塞队列
+    }
+
+    list_push(blist, &task->node);
+
+    // 设置阻塞的状态不能为 就绪态 或 执行态
+    assert(state != TASK_READY && state != TASK_RUNNING);
+
+    task->state = task->state;
+
+    task_t *current = running_task();
+    if (current == task) // 如果当前进程为目标阻塞进程则进行进程调度
+    {
+        schedule();
+    }
 }
 
 // 进程调度
@@ -154,7 +184,7 @@ u32 thread_a()
     while (true)
     {
         printk("A");
-        yeild();
+        test();
     }
 }
 
@@ -164,7 +194,7 @@ u32 thread_b()
     while (true)
     {
         printk("B");
-        yeild();
+        test();
     }
 }
 
@@ -174,12 +204,14 @@ u32 thread_c()
     while (true)
     {
         printk("C");
-        yeild();
+        test();
     }
 }
 
 void task_init()
 {
+    list_init(&block_list);
+    
     task_setup();
 
     task_create(thread_a, "a", 5, KERNEL_USER);

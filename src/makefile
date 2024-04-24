@@ -58,7 +58,8 @@ $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 	$(BUILD)/lib/string.o \
 	$(BUILD)/lib/vsprintf.o \
 	$(BUILD)/lib/bitmap.o \
-	$(BUILD)/lib/syscall.o
+	$(BUILD)/lib/syscall.o \
+	$(BUILD)/lib/list.o 
 	
 
 	$(shell mkdir -p $(dir $@))
