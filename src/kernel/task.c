@@ -61,6 +61,7 @@ static task_t *task_search(task_state_t state)
             task = ptr;
     }
 
+    // 没有就绪的任务则返回空闲进程
     if (task == NULL && state == TASK_READY)
     {
         task = idle_task;
@@ -227,13 +228,15 @@ u32 thread_c()
     }
 }
 
+extern void idle_thread();
+extern void init_thread();
+
 void task_init()
 {
     list_init(&block_list);
     
     task_setup();
 
-    task_create(thread_a, "a", 5, KERNEL_USER);
-    task_create(thread_b, "b", 5, KERNEL_USER);
-    // task_create(thread_c, "c", 5, KERNEL_USER);
+    idle_task = task_create(idle_thread, "idle", 1, KERNEL_USER);
+    task_create(init_thread, "init", 5, NORMAL_USER);
 }

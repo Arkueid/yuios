@@ -34,7 +34,7 @@ static u32 sys_test(u32 ebx, u32 ecx, u32 edx, u32 nr)
     // DEBUG("syscall test: ebx=0x%p, ecx=0x%p, edx=0x%p, nr=0x%p\n",
     //       ebx, ecx, edx, nr);
 
-    if (!task)
+    if (!task)  // task 为Null说明默认阻塞队列为空，把当前进程阻塞
     {
         task = running_task();
         task_block(task, NULL, TASK_BLOCKED);
