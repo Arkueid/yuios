@@ -3,8 +3,11 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/**",
-                "${workspaceFolder}/src/include"
+                "${workspaceFolder}/src/include",
+                "${workspaceFolder}/src/kernel",
+                "${workspaceFolder}/src/lib",
+                "${workspaceFolder}/src/boot",
+                "${workspaceFolder}/src/**"
             ],
             "defines": [],
             "intelliSenseMode": "linux-gcc-x64"

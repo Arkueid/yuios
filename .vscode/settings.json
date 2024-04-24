@@ -21,6 +21,7 @@
         "yui.h": "c",
         "memory.h": "c",
         "bitmap.h": "c",
-        "cstring": "c"
+        "cstring": "c",
+        "syscall.h": "c"
     }
 }

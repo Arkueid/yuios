@@ -93,13 +93,26 @@ void task_block(task_t *task, list_t *blist, task_state_t state)
     // 设置阻塞的状态不能为 就绪态 或 执行态
     assert(state != TASK_READY && state != TASK_RUNNING);
 
-    task->state = task->state;
+    task->state = state;
 
     task_t *current = running_task();
     if (current == task) // 如果当前进程为目标阻塞进程则进行进程调度
     {
         schedule();
     }
+}
+
+// 解除任务阻塞
+void task_wake(task_t *task)
+{
+    assert(!get_interrupt_state()); // 处于关中断
+
+    list_remove(&task->node);
+
+    assert(task->node.next == NULL);
+    assert(task->node.prev == NULL);
+
+    task->state = TASK_READY;
 }
 
 // 进程调度
@@ -216,5 +229,5 @@ void task_init()
 
     task_create(thread_a, "a", 5, KERNEL_USER);
     task_create(thread_b, "b", 5, KERNEL_USER);
-    task_create(thread_c, "c", 5, KERNEL_USER);
+    // task_create(thread_c, "c", 5, KERNEL_USER);
 }

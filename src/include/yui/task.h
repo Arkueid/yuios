@@ -59,7 +59,7 @@ void schedule();
 void task_yield();
 
 // 阻塞进程
-void task_block(task_t *task, list_t *blist, task_state_t *state);
+void task_block(task_t *task, list_t *blist, task_state_t state);
 // 唤醒进程
 void task_wake(task_t *task);
 
