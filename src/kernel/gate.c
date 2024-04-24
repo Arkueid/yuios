@@ -29,7 +29,7 @@ task_t *task = NULL;
 
 
 // 系统调用-test
-static u32 sys_test(u32 ebx, u32 ecx, u32 edx, u32 nr)
+static u32 sys_test()
 {
     // DEBUG("syscall test: ebx=0x%p, ecx=0x%p, edx=0x%p, nr=0x%p\n",
     //       ebx, ecx, edx, nr);
@@ -41,7 +41,7 @@ static u32 sys_test(u32 ebx, u32 ecx, u32 edx, u32 nr)
     }
     else
     {
-        task_wake(task);
+        task_unblock(task);
         task = NULL;
     }
     return 255;
@@ -55,5 +55,6 @@ void syscall_init()
     }
 
     syscall_table[SYS_NR_TEST] = sys_test;
+    syscall_table[SYS_NR_SLEEP] = task_sleep;
     syscall_table[SYS_NR_YEILD] = task_yield;
 }

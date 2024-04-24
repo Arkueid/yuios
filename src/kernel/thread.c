@@ -7,7 +7,7 @@ void idle_thread()
     set_interrupt_state(true);
 
     u32 counter = 0;
-    while (true)    
+    while (true)
     {
         DEBUG("idle task...%d\n", counter++);
         asm volatile(
@@ -25,6 +25,18 @@ void init_thread()
     while (true)
     {
         DEBUG("init task...\n");
-        test();
+        // test();
+    }
+}
+
+void test_thread()
+{
+    set_interrupt_state(true);
+    u32 counter = 0;
+
+    while (true)
+    {
+        DEBUG("test task %d...\n", counter++);
+        sleep(709);
     }
 }

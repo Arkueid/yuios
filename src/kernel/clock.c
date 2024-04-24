@@ -8,10 +8,10 @@
 #define PIT_CHAN2_REG 0x42
 #define PIT_CTRL_REG 0x43
 
-#define HZ 100  // 每秒产生时钟中断的次数
-#define OSCILLATOR 1193182 // 震荡器1s内产生的脉冲数
+#define HZ 100  // 每毫秒产生时钟中断的次数
+#define OSCILLATOR 1193182 // 震荡器1ms内产生的脉冲数
 #define CLOCK_COUNTER (OSCILLATOR / HZ) // 计数器产生一次脉冲所需的振荡器脉冲次数
-#define JIFFY (1000 / HZ)
+#define JIFFY (1000 / HZ)  // 一毫秒所需的jiffies
 
 #define SPEAKER_REG 0x61
 #define BEEP_HZ 440
@@ -42,6 +42,8 @@ void stop_beep()
     }
 }
 
+extern void task_wakeup();
+
 // 时钟中断处理函数
 void clock_handler(int vector)
 {
@@ -49,6 +51,7 @@ void clock_handler(int vector)
     send_eoi(vector);
     stop_beep();
 
+    task_wakeup();
 
     jiffies++;
     // DEBUG("clock jiffies %d ...\n", jiffies);
@@ -61,8 +64,6 @@ void clock_handler(int vector)
     // 时间片为0，重新进行调度
     if (!task->ticks)
     {
-        // TODO:删除
-        task->ticks = task->prioriy;
         schedule();
     }
 }

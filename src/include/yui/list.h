@@ -47,7 +47,7 @@ list_node_t *list_popback(list_t *list);
 // 查找链表中节点是否存在
 bool list_search(list_t *list, list_node_t* node);
 
-// TODO:从链表中删除节点
+// 从链表中删除节点
 void list_remove(list_node_t *node);
 
 // 判断链表是否为空

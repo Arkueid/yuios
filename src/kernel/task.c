@@ -13,12 +13,20 @@
 extern bitmap_t kernel_bitmap;
 extern void task_switch(task_t *next);
 
+extern u32 volatile jiffies;
+extern u32 jiffy;
+
 #define NR_TASKS 64
 
 // 存放进程指针的数组
 static task_t *task_table[NR_TASKS];
-static list_t block_list;  // 默认阻塞链表
-static task_t *idle_task;  // 0 号进程、空闲进程
+
+// 默认阻塞链表
+static list_t block_list;
+// 休眠链表
+static list_t sleep_list;
+
+static task_t *idle_task; // 0 号进程、空闲进程
 
 // 从 task_table 里获得一个空闲任务
 static task_t *get_free_task()
@@ -87,12 +95,12 @@ task_t *running_task()
 void task_block(task_t *task, list_t *blist, task_state_t state)
 {
     assert(!get_interrupt_state());  // 进程阻塞需要关中断
-    assert(task->node.next == NULL);  // 该链表不在阻塞队列中
+    assert(task->node.next == NULL); // 该链表不在阻塞队列中
     assert(task->node.prev == NULL);
 
     if (blist == NULL)
     {
-        blist = &block_list;  // 未给出阻塞队列则使用默认阻塞队列
+        blist = &block_list; // 未给出阻塞队列则使用默认阻塞队列
     }
 
     list_push(blist, &task->node);
@@ -110,7 +118,7 @@ void task_block(task_t *task, list_t *blist, task_state_t state)
 }
 
 // 解除任务阻塞
-void task_wake(task_t *task)
+void task_unblock(task_t *task)
 {
     assert(!get_interrupt_state()); // 处于关中断
 
@@ -135,7 +143,16 @@ void schedule()
     assert(next != NULL);
     assert(next->magic == YUI_MAGIC);
 
-    current->state = TASK_READY;
+    // 只有当前进程为执行态时才能转为就绪态
+    if (current->state == TASK_RUNNING)
+    {
+        current->state = TASK_READY;
+    }
+
+    if (!current->ticks)
+    {
+        current->ticks = current->prioriy;
+    }
 
     next->state = TASK_RUNNING;
 
@@ -198,45 +215,76 @@ void task_yield()
     schedule();
 }
 
-u32 thread_a()
+void task_sleep(u32 ms)
 {
-    set_interrupt_state(true);
-    while (true)
+    assert(!get_interrupt_state());
+
+    u32 ticks = ms / jiffy;        // 睡眠 ms 毫秒 所需的tick数
+    ticks = ticks > 0 ? ticks : 1; // 至少休眠一个时间片
+
+    task_t *current = running_task();
+    current->ticks = jiffies + ticks; // 到期时间
+
+    // 插入排序
+    list_t *list = &sleep_list;
+    list_node_t *anchor = &list->tail;
+
+    // 按 休眠结束 时刻 的 早晚 排序
+    for (list_node_t *ptr = list->head.next; ptr != &list->tail; ptr = ptr->next)
     {
-        printk("A");
-        test();
+        task_t *task = element_entry(task_t, node, ptr);
+
+        if (task->ticks > current->ticks)
+        {
+            anchor = ptr;
+            break;
+        }
     }
+
+    assert(current->node.next == NULL);
+    assert(current->node.prev == NULL);
+
+    list_insert_before(anchor, &current->node);
+
+    current->state = TASK_SLEEPING;
+
+    schedule();
 }
 
-u32 thread_b()
+void task_wakeup()
 {
-    set_interrupt_state(true);
-    while (true)
-    {
-        printk("B");
-        test();
-    }
-}
+    assert(!get_interrupt_state());
 
-u32 thread_c()
-{
-    set_interrupt_state(true);
-    while (true)
+    list_t *list = &sleep_list;
+    for (list_node_t *ptr = list->head.next; ptr != &list->tail;)
     {
-        printk("C");
-        test();
+        task_t *task = element_entry(task_t, node, ptr);
+
+        if (task->ticks > jiffies)
+        {
+            break;
+        }
+
+        ptr = ptr->next;
+
+        task->ticks = 0;
+
+        task_unblock(task);
     }
 }
 
 extern void idle_thread();
 extern void init_thread();
+extern void test_thread();
 
 void task_init()
 {
     list_init(&block_list);
-    
+    list_init(&sleep_list);
+
     task_setup();
 
     idle_task = task_create(idle_thread, "idle", 1, KERNEL_USER);
     task_create(init_thread, "init", 5, NORMAL_USER);
+    task_create(test_thread, "test", 5, KERNEL_USER);
 }

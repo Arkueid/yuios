@@ -10,7 +10,7 @@
 #define TASK_NAME_LEN 16
 
 // 入口地址
-typedef u32 target_t();
+typedef void target_t();
 
 typedef enum task_state_t
 {
@@ -61,6 +61,11 @@ void task_yield();
 // 阻塞进程
 void task_block(task_t *task, list_t *blist, task_state_t state);
 // 唤醒进程
-void task_wake(task_t *task);
+void task_unblock(task_t *task);
+
+// 休眠
+void task_sleep(u32 ms);
+// 唤醒进程
+void task_wakeup();
 
 #endif
