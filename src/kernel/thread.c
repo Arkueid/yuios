@@ -44,7 +44,6 @@ void test_thread()
     {
         spin_lock(&mutex);
         DEBUG("test task %d...\n", counter++);
-        sleep(709);
         spin_unlock(&mutex);
     }
 }
