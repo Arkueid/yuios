@@ -21,7 +21,8 @@ DEBUG:= -g
 # 头文件目录
 INCLUDE:= -I$(SRC)/include
 
-ENTRYPOINT:=0x10000
+MULTIBOOT2:=0x10000
+ENTRYPOINT:=$(shell python -c "print(f'0x{$(MULTIBOOT2) + 64:x}')")
 
 $(BUILD)/boot/%.bin: $(SRC)/boot/%.asm
 	$(shell mkdir -p $(dir $@))
@@ -35,6 +36,12 @@ $(BUILD)/%.o: $(SRC)/%.asm
 $(BUILD)/%.o: $(SRC)/%.c
 	$(shell mkdir -p $(dir $@))
 	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
+
+LDFLAGS:= -m elf_i386 \
+			-static \
+			-Ttext $(ENTRYPOINT) \
+			--section-start=.multiboot2=$(MULTIBOOT2)
+LDFLAGS:=$(strip ${LDFLAGS})
 
 # 链接
 $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
@@ -65,7 +72,7 @@ $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 	
 
 	$(shell mkdir -p $(dir $@))
-	ld -m elf_i386 -static $^ -o $@ -Ttext $(ENTRYPOINT)
+	ld $(LDFLAGS) $^ -o $@
 
 
 $(BUILD)/system.bin: $(BUILD)/kernel.bin
@@ -88,6 +95,22 @@ $(BUILD)/master.img: $(BUILD)/boot/boot.bin \
 	
 	dd if=$(BUILD)/system.bin of=$@ bs=512 count=200 seek=10 conv=notrunc
 
+$(BUILD)/kernel.iso: $(BUILD)/kernel.bin $(SRC)/utils/grub.cfg
+
+# 检测内核文件是否合法
+	grub-file --is-x86-multiboot2 $<
+# 创建iso目录
+	mkdir -p $(BUILD)/iso/boot/grub
+# 拷贝内核文件
+	cp $< $(BUILD)/iso/boot
+# 拷贝 grub 配置文件
+	cp $(SRC)/utils/grub.cfg $(BUILD)/iso/boot/grub
+# 生成iso文件，报错需要安装 xorriso, mtools
+	grub-mkrescue -o $@ $(BUILD)/iso 
+
+image: $(BUILD)/master.img
+
+
 $(BUILD)/master.vmdk: $(BUILD)/master.img
 	qemu-img convert -O vmdk $< $@
 
@@ -105,6 +128,10 @@ bochs: $(BUILD)/master.img
 .PHONY: bochsg
 bochsg: $(BUILD)/master.img
 	bochs-gdb -q -f ../bochs/bochsrc-gdb -unlock
+
+.PHONY: bochsb
+bochsb: $(BUILD)/kernel.iso
+	bochs -q -f ../bochs/bochsrc-grub -unlock
 
 test: $(BUILD)/master.img
 

@@ -1,10 +1,27 @@
 [bits 32]
 
+magic   equ 0xe85250d6
+i386    equ 0
+length  equ header_end - header_start
+
+section .multiboot2
+header_start:
+    dd magic 
+    dd i386
+    dd length
+    dd -(magic + i386 + length)
+
+    dw 0    ; type
+    dw 0    ; flags
+    dd 8    ; size
+header_end:
+
 extern console_init
 extern memory_init
 extern kernel_init
 extern gdt_init
 
+section .text
 
 global _start
 _start:
