@@ -21,9 +21,9 @@ extern u32 jiffy;
 // 存放进程指针的数组
 static task_t *task_table[NR_TASKS];
 
-// 默认阻塞链表
+// 默认阻塞链表，先进先出
 static list_t block_list;
-// 休眠链表
+// 休眠链表，优先级队列，按睡眠结束的早晚排序
 static list_t sleep_list;
 
 static task_t *idle_task; // 0 号进程、空闲进程

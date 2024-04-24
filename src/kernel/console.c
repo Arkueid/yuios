@@ -187,7 +187,7 @@ extern void start_beep();
 
 void console_write(char *buf, u32 count)
 {
-    bool intr = interrupt_disable();
+    // bool intr = interrupt_disable();
 
     // 以下为临界区代码
     char ch;
@@ -238,7 +238,7 @@ void console_write(char *buf, u32 count)
         set_cursor();
     }
 
-    set_interrupt_state(intr); // 恢复之前的中断状态
+    // set_interrupt_state(intr); // 恢复之前的中断状态
 }
 
 void console_init()
