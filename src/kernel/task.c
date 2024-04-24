@@ -18,6 +18,7 @@ extern void task_switch(task_t *next);
 // 存放进程指针的数组
 static task_t *task_table[NR_TASKS];
 static list_t block_list;  // 默认阻塞链表
+static task_t *idle_task;  // 0 号进程、空闲进程
 
 // 从 task_table 里获得一个空闲任务
 static task_t *get_free_task()
@@ -58,6 +59,11 @@ static task_t *task_search(task_state_t state)
             ptr->jiffies < task->jiffies // 选取最晚进入队列的
         )
             task = ptr;
+    }
+
+    if (task == NULL && state == TASK_READY)
+    {
+        task = idle_task;
     }
 
     return task;
