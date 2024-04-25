@@ -63,6 +63,7 @@ $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 	$(BUILD)/kernel/gate.o \
 	$(BUILD)/kernel/thread.o \
 	$(BUILD)/kernel/mutex.o \
+	$(BUILD)/kernel/keyboard.o \
 	$(BUILD)/lib/stdlib.o \
 	$(BUILD)/lib/string.o \
 	$(BUILD)/lib/vsprintf.o \

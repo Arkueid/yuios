@@ -10,6 +10,8 @@ extern void memory_map_init();
 extern void mapping_init();
 extern void syscall_init();
 extern void sys_tests();
+extern void keyboard_init();
+
 
 #include <yui/types.h>
 extern void set_interrupt_state(bool state);
@@ -25,6 +27,8 @@ void kernel_init()
 
     task_init();
     syscall_init();
+
+    keyboard_init();
 
     set_interrupt_state(true);
 
