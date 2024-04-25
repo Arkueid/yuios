@@ -15,6 +15,8 @@ extern void keyboard_init();
 
 #include <yui/types.h>
 extern void set_interrupt_state(bool state);
+extern void tss_init();
+
 
 void kernel_init()
 {
@@ -24,7 +26,7 @@ void kernel_init()
     clock_init();
     // time_init();
     // rtc_init();
-
+    tss_init();
     task_init();
     syscall_init();
 

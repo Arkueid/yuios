@@ -3,6 +3,7 @@
 #include <yui/debug.h>
 #include <yui/mutex.h>
 #include <yui/printk.h>
+#include <yui/task.h>
 
 void idle_thread()
 {
@@ -24,21 +25,22 @@ lock_t mutex;
 
 extern void keyboard_read(char *ch, u32 count);
 
-void init_thread()
+static void real_init_thread()
 {
-
-    set_interrupt_state(true);
-    u32 counter = 0;
+    u32 counter;
 
     char ch;
     while (true)
     {
-        bool intr = interrupt_disable();
-        
-        keyboard_read(&ch, 1);
-        printk("%c", ch);
-        set_interrupt_state(intr);
+        sleep(100);
     }
+}
+
+void init_thread()
+{
+
+    char temp[100];
+    task_to_user_mode(real_init_thread);
 }
 
 void test_thread()

@@ -7,10 +7,17 @@
 
 #define KERNEL_CODE_IDX 1
 #define KERNEL_DATA_IDX 2
+#define KERNEL_TSS_IDX 3
+
+#define USER_CODE_IDX 4
+#define USER_DATA_IDX 5
 
 #define KERNEL_CODE_SELECTOR (KERNEL_CODE_IDX << 3)
 #define KERNEL_DATA_SELECTOR (KERNEL_DATA_IDX << 3)
+#define KERNEL_TSS_SELECTOR (KERNEL_TSS_IDX << 3)
 
+#define USER_CODE_SELECTOR (USER_CODE_IDX << 3 | 0b11)
+#define USER_DATA_SELECTOR (USER_DATA_IDX << 3 | 0b11)
 
 
 // 全局描述符
@@ -44,6 +51,39 @@ typedef struct pointer_t
     u16 limit;
     u32 base;
 } _packed pointer_t;
+
+typedef struct tss_t
+{
+    u32 backlist;
+    u32 esp0;
+    u32 ss0;
+    u32 esp1;
+    u32 ss1;
+    u32 esp2;
+    u32 ss2;
+    u32 cr3;
+    u32 eip;
+    u32 flags;
+    u32 eax;
+    u32 ecx;
+    u32 edx;
+    u32 ebx;
+    u32 esp;
+    u32 esi;
+    u32 edi;
+    u32 es;
+    u32 cs;
+    u32 ss;
+    u32 ds;
+    u32 fs;
+    u32 gs;
+    u32 ldtr;
+    u16 trace : 1;
+
+    u16 reversed : 15;
+    u16 iobase;
+    u32 ssp;
+} _packed tss_t;
 
 void gdt_init();
 

@@ -28,7 +28,7 @@ typedef struct task_t
     u32 *stack;               // 内存栈，栈顶
     list_node_t node;         // 任务阻塞节点
     task_state_t state;       // 程序状态
-    u32 prioriy;              // 优先级
+    u32 priority;              // 优先级
     u32 ticks;                // 剩余执行时间
     u32 jiffies;              // 上次执行时全局时间
     char name[TASK_NAME_LEN]; // 任务名称
@@ -47,6 +47,37 @@ typedef struct task_frame_t
     u32 ebp;
     void (*eip)(void); // 函数指针，入口地址
 } task_frame_t;
+
+typedef struct intr_frame_t
+{
+    u32 vector;
+
+    u32 edi;
+    u32 esi;
+    u32 ebp;
+
+    u32 esp_dummy;
+    
+    u32 ebx;
+    u32 edx;
+    u32 ecx;
+    u32 eax;
+    
+    u32 gs;
+    u32 fs;
+    u32 es;
+    u32 ds;
+
+    u32 vector0;
+
+    u32 error;
+
+    u32 eip;
+    u32 cs;
+    u32 eflags;
+    u32 esp;
+    u32 ss;
+} intr_frame_t;
 
 void task_init();
 
@@ -67,5 +98,7 @@ void task_unblock(task_t *task);
 void task_sleep(u32 ms);
 // 唤醒进程
 void task_wakeup();
+
+void task_to_user_mode(target_t target);
 
 #endif
