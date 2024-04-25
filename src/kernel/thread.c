@@ -2,6 +2,7 @@
 #include <yui/syscall.h>
 #include <yui/debug.h>
 #include <yui/mutex.h>
+#include <yui/printk.h>
 
 void idle_thread()
 {
@@ -21,15 +22,22 @@ void idle_thread()
 
 lock_t mutex;
 
+extern void keyboard_read(char *ch, u32 count);
+
 void init_thread()
 {
 
     set_interrupt_state(true);
+    u32 counter = 0;
 
+    char ch;
     while (true)
     {
-        // DEBUG("init task...\n");
-        sleep(500);
+        bool intr = interrupt_disable();
+        
+        keyboard_read(&ch, 1);
+        printk("%c", ch);
+        set_interrupt_state(intr);
     }
 }
 
