@@ -6,6 +6,7 @@
 #include <yui/stdlib.h>
 #include <yui/string.h>
 #include <yui/bitmap.h>
+#include <yui/multiboot2.h>
 
 #define ZONE_VALID 1    // ards 可用区域
 #define ZONE_RESERVED 2 // ards 不可用区域
@@ -15,7 +16,6 @@
 #define PAGE(idx) ((u32)idx << 12)             // 页索引转页框地址
 #define DIDX(addr) (((u32)addr >> 22) & 0x3ff) // 获取页目录索引
 #define TIDX(addr) (((u32)addr >> 12) & 0x3ff) // 获取页表索引
-
 
 #define ASSERT_PAGE(addr) assert((addr & 0xfff) == 0)
 
@@ -48,14 +48,14 @@ static u32 memory_map_pages; // 物理内存数组占用的页数
 
 void memory_init(u32 magic, u32 addr)
 {
-    u32 count;
-    ards_t *ptr;
+    u32 count = 0;
 
     // 如果是通过 yui loader 进入的内核
     if (magic == YUI_MAGIC)
     {
         count = *(u32 *)addr;
-        ptr = (ards_t *)(addr + 4);
+        ards_t *ptr = (ards_t *)(addr + 4);
+
         for (size_t i = 0; i < count; i++, ptr++)
         {
             DEBUG("Memory base 0x%p size 0x%p type %d\n",
@@ -65,6 +65,36 @@ void memory_init(u32 magic, u32 addr)
                 memory_base = (u32)ptr->base;
                 memory_size = (u32)ptr->size;
             }
+        }
+    }
+    else if (magic == MULTIBOOT2_MAGIC)
+    {
+        u32 size = *(unsigned int *)addr;
+        multi_tag_t *tag = (multi_tag_t *)(addr + 8);
+
+        DEBUG("Announced mbi size 0x%x\n", size);
+
+        while (tag->type != MULTIBOOT_TAG_TYPE_END)
+        {
+            if (tag->type == MULTIBOOT_TAG_TYPE_MMAP)
+                break;
+
+            tag = (multi_tag_t *)((u32)tag + ((tag->size + 7) & ~7));
+        }
+
+        multi_tag_mmap_t *mtag = (multi_tag_mmap_t *)tag;
+        multi_mmap_entry_t *entry = mtag->entries;
+        while ((u32) entry < (u32)tag + tag->size)
+        {
+            DEBUG("Memory base 0x%p size 0x%p type %d\n", (u32)entry->addr, (u32)entry->len, (u32)entry->type);
+
+            count++;
+            if (entry->type == ZONE_VALID && entry->len > memory_size)
+            {
+                memory_base = (u32)entry->addr;
+                memory_size = (u32)entry->len;
+            }
+            entry = (multi_mmap_entry_t *)((u32)entry + mtag->entry_size);
         }
     }
     else
@@ -248,7 +278,7 @@ static void flush_tlb(u32 vaddr)
     asm volatile("invlpg (%0)" ::"r"(vaddr) : "memory");
 }
 
-static u32 scan_page(bitmap_t * map, u32 count)
+static u32 scan_page(bitmap_t *map, u32 count)
 {
     assert(count > 0);
     index_t index = bitmap_scan(map, count);
@@ -272,7 +302,7 @@ static void reset_page(bitmap_t *map, u32 addr, u32 count)
 
     u32 index = IDX(addr);
 
-    for (size_t i = 0; i < count; i ++)
+    for (size_t i = 0; i < count; i++)
     {
         assert(bitmap_test(map, index + i));
         bitmap_set(map, index + i, 0);
@@ -296,4 +326,3 @@ void free_kpage(u32 vaddr, u32 count)
     reset_page(&kernel_bitmap, vaddr, count);
     DEBUG("FREE kernel pages 0x%p count %d\n", vaddr, count);
 }
-
