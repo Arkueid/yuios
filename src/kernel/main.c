@@ -30,9 +30,9 @@ void kernel_init()
 
     keyboard_init();
 
-    set_interrupt_state(true);
-
     printk("Hello, Yui\n");
+
+    set_interrupt_state(true);
 
     hang();
 }

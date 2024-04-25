@@ -29,7 +29,7 @@ void init_thread()
     while (true)
     {
         // DEBUG("init task...\n");
-        sleep(700);
+        sleep(500);
     }
 }
 

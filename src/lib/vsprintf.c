@@ -38,6 +38,10 @@ static char *number(char *str, unsigned long num, int base, int size, int precis
     int index;
     char *ptr = str;
 
+    // 如果 flags 指出用小写字母，则定义小写字母集
+    if (flags & SMALL)
+        digits = "0123456789abcdefghijklmnopqrstuvwxyz";
+
     // 如果左对齐，则屏蔽填0标志
     if (flags & LEFT)
         flags &= ~ZEROPAD;
@@ -229,7 +233,7 @@ int vsprintf(char *buf, const char *fmt, va_list args)
         {
         case 'c':
             if (!(flags & LEFT))
-                while (!(flags & LEFT))
+                while (--field_width > 0) // TODO:已修复 打印%c格式时，出现死循环
                     *str++ = ' ';
             *str++ = (unsigned char)va_arg(args, int);
             while (--field_width > 0)
@@ -259,7 +263,7 @@ int vsprintf(char *buf, const char *fmt, va_list args)
         case 'p':
             if (field_width == -1)
             {
-                field_width = 0;
+                field_width = 8; // TODO:错误位置1
                 flags |= ZEROPAD;
             }
             str = number(str,

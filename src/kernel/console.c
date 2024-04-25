@@ -75,7 +75,6 @@ static void get_cursor()
     pos <<= 1;       // 两个字节
     pos += MEM_BASE; // 内存中的位置
 
-
     u32 delta = (pos - screen) >> 1;
     x = delta % WIDTH;
     y = delta / WIDTH;
@@ -133,7 +132,7 @@ static void scroll_up()
         // 将当前屏幕复制到显存开始处
         memcpy((void *)MEM_BASE, (void *)screen, SCR_SIZE);
         // 光标移动到新屏幕对应位置
-        pos = pos - screen + MEM_BASE;
+        pos -= (screen - MEM_BASE);
         screen = MEM_BASE;
     }
     // 清空下一行
@@ -235,8 +234,8 @@ void console_write(char *buf, u32 count)
             x++;
             break;
         }
-        set_cursor();
     }
+    set_cursor();
 
     set_interrupt_state(intr); // 恢复之前的中断状态
 }
