@@ -3,6 +3,9 @@
 #include <yui/assert.h>
 #include <yui/debug.h>
 
+#define KEYBOARD_CMD_LED 0xED// 设置 LED 状态
+#define KEYBOARD_CMD_ACK 0xFA// ACK
+
 #define KEYBOARD_DATA_PORT 0x60
 #define KEYBOARD_CTRL_PORT 0x64
 
@@ -227,6 +230,38 @@ static bool extcode_state;  // 拓展码状态
 // shift 键状态
 #define shift_state (keymap[KEY_SHIFT_L][2] || keymap[KEY_SHIFT_R][2])
 
+static void keyboard_wait()
+{
+    u8 state;
+    do
+    {
+        state = inb(KEYBOARD_CTRL_PORT);
+    } while (state & 0x02); // 读取键盘缓冲区，直到为空
+}
+
+static void keyboard_ack()
+{
+    u8 state;
+    do
+    {
+        state = inb(KEYBOARD_DATA_PORT);
+    } while (state != KEYBOARD_CMD_ACK);
+}
+
+static void set_leds()
+{
+    u8 leds = (capslock_state << 2) | (numlock_state << 1) | scrlock_state;
+    keyboard_wait();
+    // 设置 led 指令
+    outb(KEYBOARD_DATA_PORT, KEYBOARD_CMD_LED);
+    keyboard_ack();
+
+    keyboard_wait();
+
+    outb(KEYBOARD_DATA_PORT, leds);
+    keyboard_ack();
+}
+
 void keyboard_handler(int vector)
 {
     assert(vector == 0x21);
@@ -289,9 +324,14 @@ void keyboard_handler(int vector)
         led = true;
     }
 
+    if (led)
+    {
+        set_leds();
+    }
+
     // 计算shift状态
     bool shift = false;
-    if (capslock_state)
+    if (capslock_state && ('a' <= keymap[makecode][0] <= 'z'))
     {
         shift = !shift;
     }
