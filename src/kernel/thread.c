@@ -19,19 +19,19 @@ void idle_thread()
     }
 }
 
-spinlock_t mutex;
+lock_t mutex;
 
 void init_thread()
 {
-    spin_init(&mutex);
+    lock_init(&mutex);
     set_interrupt_state(true);
 
     while (true)
     {
-        spin_lock(&mutex);
+        lock_accquire(&mutex);
         DEBUG("init task...\n");
         // test();
-        spin_unlock(&mutex);
+        lock_release(&mutex);
     }
 }
 
@@ -42,8 +42,8 @@ void test_thread()
 
     while (true)
     {
-        spin_lock(&mutex);
+        lock_accquire(&mutex);
         DEBUG("test task %d...\n", counter++);
-        spin_unlock(&mutex);
+        lock_release(&mutex);
     }
 }

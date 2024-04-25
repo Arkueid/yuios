@@ -5,7 +5,7 @@ static _inline u32 _syscall0(u32 nr)
     u32 ret;
     asm volatile(
         "int $0x80\n"
-        : "a="(ret) // 输出约束: ret=eax
+        : "=a"(ret) // 输出约束: ret=eax
         : "a"(nr)); // 输入约束：eax=nr
     return ret;
 }
@@ -15,7 +15,7 @@ static _inline u32 _syscall1(u32 nr, u32 arg)
     u32 ret;
     asm volatile(
         "int $0x80\n"
-        : "a="(ret)
+        : "=a"(ret)
         : "a"(nr), "b"(arg)
     );
     return ret;
