@@ -44,6 +44,27 @@ void gdt_init()
     desc->DPL = 0;         // 内核特权级
     desc->type = 0b0010;   // 数据/向上增长/可写/没有被访问过
 
+    // 用户空间
+    desc = gdt + USER_CODE_IDX;
+    descriptor_init(desc, 0, 0xfffff);
+    desc->segment = 1; // 代码段
+    desc->granularity = 1;
+    desc->big = 1;
+    desc->long_mode = 0;
+    desc->present = 1;
+    desc->DPL = 3; // 用户特权级
+    desc->type = 0b1010;
+
+    desc = gdt + USER_DATA_IDX;
+    descriptor_init(desc, 0, 0xfffff);
+    desc->segment = 1;
+    desc->granularity = 1;
+    desc->big = 1;
+    desc->long_mode = 0;
+    desc->present = 1;
+    desc->DPL = 3;
+    desc->type = 0b0010;
+
     gdt_ptr.base = (u32)&gdt;
     gdt_ptr.limit = sizeof(gdt) - 1;
 }

@@ -1,3 +1,5 @@
+#include <yui/interrupt.h>
+
 extern void interrupt_init();
 extern void task_init();
 extern void hang();
@@ -11,30 +13,23 @@ extern void mapping_init();
 extern void syscall_init();
 extern void sys_tests();
 extern void keyboard_init();
-
-
-#include <yui/types.h>
-extern void set_interrupt_state(bool state);
 extern void tss_init();
+
 
 
 void kernel_init()
 {
+    tss_init();
     memory_map_init();
     mapping_init();
     interrupt_init();
     clock_init();
     // time_init();
     // rtc_init();
-    tss_init();
+
+    keyboard_init();
     task_init();
     syscall_init();
 
-    keyboard_init();
-
-    printk("Hello, Yui\n");
-
     set_interrupt_state(true);
-
-    hang();
 }

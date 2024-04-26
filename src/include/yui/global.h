@@ -54,7 +54,7 @@ typedef struct pointer_t
 
 typedef struct tss_t
 {
-    u32 backlist;
+    u32 backlink;
     u32 esp0;
     u32 ss0;
     u32 esp1;
@@ -69,6 +69,7 @@ typedef struct tss_t
     u32 edx;
     u32 ebx;
     u32 esp;
+    u32 ebp;
     u32 esi;
     u32 edi;
     u32 es;
@@ -79,7 +80,6 @@ typedef struct tss_t
     u32 gs;
     u32 ldtr;
     u16 trace : 1;
-
     u16 reversed : 15;
     u16 iobase;
     u32 ssp;

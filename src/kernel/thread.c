@@ -4,6 +4,7 @@
 #include <yui/mutex.h>
 #include <yui/printk.h>
 #include <yui/task.h>
+#include <yui/stdio.h>
 
 void idle_thread()
 {
@@ -27,20 +28,22 @@ extern void keyboard_read(char *ch, u32 count);
 
 static void real_init_thread()
 {
-    u32 counter;
+    u32 counter = 0;
 
     char ch;
     while (true)
     {
         sleep(100);
+
+        printf("task is in user mode %d\n", counter++);
     }
 }
 
 void init_thread()
 {
-
-    char temp[100];
+    intr_frame_t iframe;  // 在任务栈栈底创建一个 中断帧
     task_to_user_mode(real_init_thread);
+    // real_init_thread();
 }
 
 void test_thread()

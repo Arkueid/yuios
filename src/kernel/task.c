@@ -132,6 +132,7 @@ void task_unblock(task_t *task)
     task->state = TASK_READY;
 }
 
+// 激活任务
 void task_activate(task_t *task)
 {
     assert(task->magic == YUI_MAGIC);
@@ -294,7 +295,9 @@ void task_to_user_mode(target_t target)
     u32 addr = (u32)task + PAGE_SIZE;
 
     addr -= sizeof(intr_frame_t);
-    intr_frame_t *iframe = (intr_frame_t *)addr;
+    // 模拟中断 进入 用户态
+    // 中断帧
+    intr_frame_t *iframe = (intr_frame_t *)(addr);
 
     iframe->vector = 0x20;
     iframe->edi = 1;
@@ -305,7 +308,9 @@ void task_to_user_mode(target_t target)
     iframe->edx = 6;
     iframe->ecx = 7;
     iframe->eax = 8;
+    // ---以上用不到---
 
+    // ---以下中断返回---
     iframe->gs = 0;
     iframe->ds = USER_DATA_SELECTOR;
     iframe->es = USER_DATA_SELECTOR;
@@ -315,11 +320,12 @@ void task_to_user_mode(target_t target)
 
     iframe->error = YUI_MAGIC;
 
+    // 重新分配用户栈
     u32 stack3 = alloc_kpage(1); // TODO:replace to user stack
 
     iframe->eip = (u32)target;
-    iframe->eflags = (0 << 12 | 0b10 | 1 << 9);
-    iframe->esp = stack3 + PAGE_SIZE;
+    iframe->eflags = (0 << 12 | 0b10 | 1 << 9);  
+    iframe->esp = stack3 + PAGE_SIZE;  // 返回地址
 
     asm volatile(
         "movl %0, %%esp\n"
