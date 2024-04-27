@@ -6,11 +6,11 @@
 #define PAGE_SIZE 0x1000     // 一页的大小
 #define MEMORY_BASE 0x100000 // 1M，可用内存开始的位置
 
-// 内核占用的内存大小
+// 内核占用的内存大小 8M
 #define KERNEL_MEMORY_SIZE 0x800000
 
 // 用户栈顶地址 从0开始，128M的位置
-#define USER_STACK_TOP 0x800000
+#define USER_STACK_TOP 0x8000000
 
 // 在内存中找两个页，存放页表和内核页
 // 内核页目录

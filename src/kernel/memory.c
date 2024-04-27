@@ -264,7 +264,7 @@ void mapping_init()
 
 static page_entry_t *get_pde()
 {
-    return (page_entry_t *)(0xfffff000); // 线性地址
+    return (page_entry_t *)(0xfffff000);
 }
 
 static page_entry_t *get_pte(u32 vaddr, bool create)
