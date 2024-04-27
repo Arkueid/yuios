@@ -5,6 +5,7 @@
 #include <yui/printk.h>
 #include <yui/task.h>
 #include <yui/stdio.h>
+#include <yui/arena.h>
 
 void idle_thread()
 {
@@ -26,24 +27,23 @@ lock_t mutex;
 
 extern void keyboard_read(char *ch, u32 count);
 
-static void real_init_thread()
+static void user_init_thread()
 {
     u32 counter = 0;
 
     char ch;
     while (true)
     {
-        sleep(100);
+        sleep(1000);
 
-        printf("task is in user mode %d\n", counter++);
+        // printf("task is in user mode %d\n", counter++);
     }
 }
 
 void init_thread()
 {
     intr_frame_t iframe;  // 在任务栈栈底创建一个 中断帧
-    task_to_user_mode(real_init_thread);
-    // real_init_thread();
+    task_to_user_mode(user_init_thread);
 }
 
 void test_thread()
@@ -54,6 +54,18 @@ void test_thread()
     while (true)
     {
         // DEBUG("test task %d...\n", counter++);
-        sleep(700);
+        void *ptr = kmalloc(1200);
+        DEBUG("kmalloc 0x%p...count %d\n", ptr, counter);
+        kfree(ptr);
+
+        ptr = kmalloc(1024);
+        DEBUG("kmalloc 0x%p...count %d\n", ptr, counter);
+        kfree(ptr);
+
+        ptr = kmalloc(54);
+        DEBUG("kmalloc 0x%p...count %d\n", ptr, counter++);
+        kfree(ptr);
+
+        sleep(5000);
     }
 }
