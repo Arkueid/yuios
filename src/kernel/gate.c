@@ -4,6 +4,7 @@
 #include <yui/syscall.h>
 #include <yui/task.h>
 #include <yui/console.h>
+#include <yui/memory.h>
 
 #define SYSCALL_SIZE 64
 
@@ -26,25 +27,18 @@ static void sys_default()
     panic("syscall not implemented!!!");
 }
 
-task_t *task = NULL;
-
-
 // 系统调用-test
 static u32 sys_test()
 {
-    // DEBUG("syscall test: ebx=0x%p, ecx=0x%p, edx=0x%p, nr=0x%p\n",
-    //       ebx, ecx, edx, nr);
+    char *ptr;
 
-    if (!task)  // task 为Null说明默认阻塞队列为空，把当前进程阻塞
-    {
-        task = running_task();
-        task_block(task, NULL, TASK_BLOCKED);
-    }
-    else
-    {
-        task_unblock(task);
-        task = NULL;
-    }
+    link_page(0x1600000);
+
+    ptr = (char *) 0x1600000;
+    ptr[3] = 'T';
+
+    unlink_page(0x1600000);
+
     return 255;
 }
 

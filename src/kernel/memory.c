@@ -7,6 +7,7 @@
 #include <yui/string.h>
 #include <yui/bitmap.h>
 #include <yui/multiboot2.h>
+#include <yui/task.h>
 
 #define ZONE_VALID 1    // ards 可用区域
 #define ZONE_RESERVED 2 // ards 不可用区域
@@ -19,12 +20,11 @@
 
 #define ASSERT_PAGE(addr) assert((addr & 0xfff) == 0)
 
+#define PDE_MASK 0xffc00000
+
 // 内核位图数据存放位置
 #define KERNEL_MAP_BITS 0x4000
 
-// 一个页表映射4M空间，总共两个页表
-// 这个写法只是最终结果正确
-#define KERNEL_MEMORY_SIZE (0x100000 * sizeof(KERNEL_PAGE_TABLE))
 
 typedef struct ards_t
 {
@@ -84,7 +84,7 @@ void memory_init(u32 magic, u32 addr)
 
         multi_tag_mmap_t *mtag = (multi_tag_mmap_t *)tag;
         multi_mmap_entry_t *entry = mtag->entries;
-        while ((u32) entry < (u32)tag + tag->size)
+        while ((u32)entry < (u32)tag + tag->size)
         {
             DEBUG("Memory base 0x%p size 0x%p type %d\n", (u32)entry->addr, (u32)entry->len, (u32)entry->type);
 
@@ -160,7 +160,7 @@ static u32 get_page()
             memory_map[i] = 1;
             free_pages--;
             assert(free_pages >= 0);
-            u32 page = ((u32)i) << 12;
+            u32 page = PAGE(i);
             DEBUG("GET page 0x%p\n", page);
             return page; // 返回分配的页起始地址
         }
@@ -267,9 +267,26 @@ static page_entry_t *get_pde()
     return (page_entry_t *)(0xfffff000); // 线性地址
 }
 
-static page_entry_t *get_pte(u32 vaddr)
+static page_entry_t *get_pte(u32 vaddr, bool create)
 {
-    return (page_entry_t *)(0xffc00000 | (DIDX(vaddr)) << 12);
+    page_entry_t *pde = get_pde();
+    u32 idx = DIDX(vaddr);
+    page_entry_t *entry = &pde[idx];
+
+    assert(create || entry->present);
+
+    page_entry_t *table = (page_entry_t *)(PDE_MASK | (idx << 12));
+
+    if (!entry->present)
+    {
+        DEBUG("Get and create page table entry for 0x%p\n", vaddr);
+
+        u32 page = get_page();
+        entry_init(entry, IDX(page));
+        memset(table, 0, PAGE_SIZE);
+    }
+
+    return table;
 }
 
 // 刷新快表
@@ -325,4 +342,65 @@ void free_kpage(u32 vaddr, u32 count)
 
     reset_page(&kernel_bitmap, vaddr, count);
     DEBUG("FREE kernel pages 0x%p count %d\n", vaddr, count);
+}
+
+void link_page(u32 vaddr)
+{
+    ASSERT_PAGE(vaddr);
+
+    page_entry_t *pte = get_pte(vaddr, true);
+    page_entry_t *entry = &pte[TIDX(vaddr)];
+
+    task_t *task = running_task();
+    bitmap_t *map = task->vmap;
+    u32 index = IDX(vaddr);
+
+    if (entry->present)
+    {
+        assert(bitmap_test(map, index));
+        return;
+    }
+
+    assert(!bitmap_test(map, index));
+    bitmap_set(map, index, true);
+
+    u32 paddr = get_page();
+
+    entry_init(entry, IDX(paddr));
+    flush_tlb(vaddr);
+
+    DEBUG("Link from 0x%p to 0x%p\n", vaddr, paddr);
+}
+
+void unlink_page(u32 vaddr)
+{
+    ASSERT_PAGE(vaddr);
+
+    page_entry_t *pte = get_pte(vaddr, true);
+    page_entry_t *entry = &pte[TIDX(vaddr)];
+
+    task_t *task = running_task();
+    bitmap_t *map = task->vmap;
+    u32 index = IDX(vaddr);
+
+    if (!entry->present)
+    {
+        assert(!bitmap_test(map, index));
+        return;
+    }
+
+    assert(entry->present && bitmap_test(map, index));
+
+    entry->present = false;
+    bitmap_set(map, index, false);
+
+    u32 paddr = PAGE(entry->index);
+
+    DEBUG("Unlink from 0x%p to 0x%p\n", vaddr, paddr);
+
+    if (memory_map[entry->index] == 1)
+    {
+        put_page(paddr);
+    }
+    flush_tlb(vaddr);
 }
