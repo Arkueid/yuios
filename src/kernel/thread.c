@@ -36,13 +36,7 @@ static void user_init_thread()
     char ch;
     while (true)
     {
-        char *ptr = (char*) 0x900000;
-        brk(ptr);
-        ptr -= 0x1000;
-        ptr[3] = 0xff;
-
-        brk((char *)0x800000);
-        printf("task is in user mode %d\n", counter++);
+        printf("user thread: pid=%d, ppid=%d...\n", getpid(), getppid());
         sleep(1000);
     }
 }
@@ -60,7 +54,7 @@ void test_thread()
 
     while (true)
     {
-        // DEBUG("test task %d...\n", counter++);
+        printf("test thread: pid=%d, ppid=%d...\n", getpid(), getppid());
         sleep(2000);
     }
 }

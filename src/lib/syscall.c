@@ -58,3 +58,13 @@ int32 brk(void *vaddr)
 {
     _syscall1(SYS_NR_BRK, (u32)vaddr);
 }
+
+pid_t getpid()
+{
+    return _syscall0(SYS_NR_GETPID);
+}
+
+pid_t getppid()
+{
+    return _syscall0(SYS_NR_GETPPID);
+}

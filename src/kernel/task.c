@@ -40,8 +40,11 @@ static task_t *get_free_task()
         {
             // @todo free_kpage
             // 分配一页内存
-            task_table[i] = (task_t *)alloc_kpage(1);
-            return task_table[i];
+            task_t *task = (task_t *)alloc_kpage(1);
+            memset(task, 0, PAGE_SIZE);
+            task->pid = i;
+            task_table[i] = task;
+            return task;
         }
     }
     panic("No more tasks, max is %d\n", NR_TASKS);
@@ -188,7 +191,6 @@ void schedule()
 static task_t *task_create(target_t target, const char *name, u32 priority, u32 uid)
 {
     task_t *task = get_free_task();
-    memset(task, 0, PAGE_SIZE);
 
     // 从高地址向低地址增长
     // 进程的内存空间中 最低地址开始 存放进程控制信息
@@ -360,4 +362,16 @@ void task_init()
     idle_task = task_create(idle_thread, "idle", 1, KERNEL_USER);
     task_create(init_thread, "init", 5, NORMAL_USER);
     task_create(test_thread, "test", 5, KERNEL_USER);
+}
+
+pid_t sys_getpid()
+{
+    task_t *task = running_task();
+    return task->pid;
+}
+
+pid_t sys_getppid()
+{
+    task_t *task = running_task();
+    return task->ppid;
 }
