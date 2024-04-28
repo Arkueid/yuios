@@ -36,7 +36,17 @@ static void user_init_thread()
     char ch;
     while (true)
     {
-        printf("user thread: pid=%d, ppid=%d...\n", getpid(), getppid());
+        pid_t pid = fork();
+
+        if (pid)
+        {
+            printf("fork in parent(pid=%d, ppid=%d): pid=%d\n", pid, getpid(), getppid());
+        }
+        else
+        {
+            printf("fork in child(pid=%d, ppid=%d)\n", getpid(), getppid());
+        }
+        hang();
         sleep(1000);
     }
 }

@@ -297,6 +297,61 @@ void task_wakeup()
     }
 }
 
+extern void interrupt_exit();
+
+static void task_build_stack(task_t *task)
+{
+    u32 addr = (u32)task + PAGE_SIZE;
+    addr -= sizeof(intr_frame_t);
+    intr_frame_t *iframe = (intr_frame_t *)addr;
+    iframe->eax = 0;
+
+    addr -= sizeof(task_frame_t);
+    task_frame_t *frame = (task_frame_t*)addr;
+
+    frame->ebp = 0xaa55aa55;
+    frame->ebx = 0xaa55aa55;
+    frame->edi = 0xaa55aa55;
+    frame->esi = 0xaa55aa55;
+
+    frame->eip = interrupt_exit;
+
+    task->stack = (u32 *)frame;
+}
+
+pid_t task_fork()
+{
+    task_t *task = running_task();
+
+    assert(task->node.next == NULL && task->node.prev == NULL && task->state == TASK_RUNNING);
+
+    task_t *child = get_free_task();
+    pid_t pid = child->pid;
+    memcpy(child, task, PAGE_SIZE);
+
+    // 内核栈和pcb
+    child->pid = pid;
+    child->ppid = task->pid;
+    child->ticks = child->priority;
+    child->state = TASK_READY;
+
+    // 位图
+    child->vmap = kmalloc(sizeof(bitmap_t));
+    memcpy(child->vmap, task->vmap, sizeof(bitmap_t));
+
+    // 虚拟内存和内存位图
+    void *buf = (void *)alloc_kpage(1);
+    memcpy(buf, task->vmap->bits, PAGE_SIZE);
+    child->vmap->bits = buf;
+
+    // 页目录
+    child->pde = (u32)copy_pde();
+
+    task_build_stack(child);
+
+    return child->pid;
+}
+
 void task_to_user_mode(target_t target)
 {
     task_t *task = running_task();

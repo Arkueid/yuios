@@ -68,3 +68,10 @@ pid_t getppid()
 {
     return _syscall0(SYS_NR_GETPPID);
 }
+
+
+// 创建子进程
+pid_t fork()
+{
+    return _syscall0(SYS_NR_FORK);
+}

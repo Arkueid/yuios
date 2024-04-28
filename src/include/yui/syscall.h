@@ -6,6 +6,7 @@
 typedef enum syscall_t
 {
     SYS_NR_TEST,
+    SYS_NR_FORK,
     SYS_NR_WRITE,
     SYS_NR_GETPID, // 获取进程id
     SYS_NR_BRK,
@@ -27,5 +28,7 @@ int32 brk(void *vaddr);
 pid_t getpid();
 
 pid_t getppid();
+
+pid_t fork();
 
 #endif
