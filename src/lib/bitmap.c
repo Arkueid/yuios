@@ -60,7 +60,7 @@ void bitmap_set(bitmap_t *map, index_t index, bool value)
 }
 
 // 从 bitmap 中查找连续的 count 位
-// 并使用这些位对应的页
+// 并将这些页对应位置为1
 int bitmap_scan(bitmap_t *map, u32 count)
 {
     int start = EOF;                 // 标记开始的位置
@@ -69,6 +69,7 @@ int bitmap_scan(bitmap_t *map, u32 count)
     u32 counter = 0;                 // 计数器
 
     // 从头开始找
+    // 找到满足条件的连续的内存的首地址
     while (bits_left-- > 0)
     {
         if (!bitmap_test(map, map->offset + next_bit))

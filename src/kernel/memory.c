@@ -49,7 +49,7 @@ void memory_init(u32 magic, u32 addr)
 {
     u32 count = 0;
 
-    // 如果是通过 yui loader 进入的内核
+    // 不经过 grub 进入内核
     if (magic == YUI_MAGIC)
     {
         count = *(u32 *)addr;
@@ -59,6 +59,7 @@ void memory_init(u32 magic, u32 addr)
         {
             DEBUG("Memory base 0x%p size 0x%p type %d\n",
                   (u32)ptr->base, (u32)ptr->size, (u32)ptr->type);
+            // 找到最后一个符合条件的内存范围
             if (ptr->type == ZONE_VALID && ptr->size > memory_size)
             {
                 memory_base = (u32)ptr->base;
@@ -106,7 +107,7 @@ void memory_init(u32 magic, u32 addr)
     DEBUG("Memory size 0x%p\n", (u32)memory_size);
 
     assert(memory_base == MEMORY_BASE); // 内存开始的位置为 1M
-    assert((memory_size & 0xfff) == 0); // 要求按页对齐
+    assert((memory_size & 0xfff) == 0); // 页的整数倍，要求按页对齐
 
     // 总页数，包括预先占用的
     total_pages = IDX(memory_size) + IDX(MEMORY_BASE);
@@ -120,10 +121,6 @@ void memory_init(u32 magic, u32 addr)
         panic("System memory is %dM too small, at least %dM needed\n",
               memory_size / MEMORY_BASE, KERNEL_MEMORY_SIZE / MEMORY_BASE);
     }
-
-    u32 length = (IDX(KERNEL_MEMORY_SIZE) - IDX(MEMORY_BASE)) / 8;
-    bitmap_init(&kernel_bitmap, (char *)KERNEL_MAP_BITS, length, IDX(MEMORY_BASE));
-    bitmap_scan(&kernel_bitmap, memory_map_pages);
 }
 
 void memory_map_init()
@@ -149,7 +146,8 @@ void memory_map_init()
 
     DEBUG("Total pages %d free pages %d\n", total_pages, free_pages);
 
-    u32 length = (IDX(KERNEL_MEMORY_SIZE) - IDX(MEMORY_BASE)) / 8;
+    // 初始化内核虚拟内存位图
+    u32 length = (IDX(KERNEL_MEMORY_SIZE) - IDX(MEMORY_BASE)) / 8;  // 1字节 表示 8 位，位图按字节初始化
     bitmap_init(&kernel_bitmap, (u8 *)KERNEL_MAP_BITS, length, IDX(MEMORY_BASE));
     bitmap_scan(&kernel_bitmap, memory_map_pages);
 }

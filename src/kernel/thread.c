@@ -7,6 +7,7 @@
 #include <yui/stdio.h>
 #include <yui/arena.h>
 
+
 void idle_thread()
 {
     set_interrupt_state(true);
@@ -41,7 +42,7 @@ static void user_init_thread()
     while (true)
     {
         // printf("task is in user mode %d\n", counter++);
-        test_recursion();
+        // test_recursion();
         sleep(1000);
     }
 }

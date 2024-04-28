@@ -17,7 +17,6 @@ extern void tss_init();
 extern void arena_init();
 
 
-
 void kernel_init()
 {
     tss_init();
