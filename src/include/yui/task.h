@@ -28,13 +28,14 @@ typedef struct task_t
     u32 *stack;               // 内存栈，栈顶
     list_node_t node;         // 任务阻塞节点
     task_state_t state;       // 程序状态
-    u32 priority;              // 优先级
+    u32 priority;             // 优先级
     u32 ticks;                // 剩余执行时间
     u32 jiffies;              // 上次执行时全局时间
     char name[TASK_NAME_LEN]; // 任务名称
     u32 uid;                  // 用户id
     u32 pde;                  // 页目录物理地址
     struct bitmap_t *vmap;    // 进程虚拟内存位图
+    u32 brk;                  // 进程堆区内存最高地址
     u32 magic;                // 内核魔术，用于检测内存溢出
 } task_t;
 
@@ -57,12 +58,12 @@ typedef struct intr_frame_t
     u32 ebp;
 
     u32 esp_dummy;
-    
+
     u32 ebx;
     u32 edx;
     u32 ecx;
     u32 eax;
-    
+
     u32 gs;
     u32 fs;
     u32 es;

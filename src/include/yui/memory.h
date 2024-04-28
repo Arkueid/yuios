@@ -60,6 +60,10 @@ void link_page(u32 vaddr);
 // 释放用户态的物理内存
 void unlink_page(u32 vaddr);
 
+// 复制页目录
 page_entry_t *copy_pde();
+
+// 系统调用 brk
+int32 sys_brk(void *vaddr);
 
 #endif

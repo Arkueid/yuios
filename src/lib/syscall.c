@@ -52,3 +52,9 @@ int32 write(fd_t fd, char *buf, u32 len)
 {
     return _syscall3(SYS_NR_WRITE, fd, (u32)buf, len);
 }
+
+// 系统调用-brk
+int32 brk(void *vaddr)
+{
+    _syscall1(SYS_NR_BRK, (u32)vaddr);
+}

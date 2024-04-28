@@ -41,7 +41,7 @@ void bitmap_set(bitmap_t *map, index_t index, bool value)
 {
     assert(value == 0 || value == 1);
 
-    assert(index >= map->length);
+    assert(index >= map->offset);
 
     index_t idx = index - map->offset;
 

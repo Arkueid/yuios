@@ -147,7 +147,7 @@ void memory_map_init()
     DEBUG("Total pages %d free pages %d\n", total_pages, free_pages);
 
     // 初始化内核虚拟内存位图
-    u32 length = (IDX(KERNEL_MEMORY_SIZE) - IDX(MEMORY_BASE)) / 8;  // 1字节 表示 8 位，位图按字节初始化
+    u32 length = (IDX(KERNEL_MEMORY_SIZE) - IDX(MEMORY_BASE)) / 8; // 1字节 表示 8 位，位图按字节初始化
     bitmap_init(&kernel_bitmap, (u8 *)KERNEL_MAP_BITS, length, IDX(MEMORY_BASE));
     bitmap_scan(&kernel_bitmap, memory_map_pages);
 }
@@ -287,7 +287,7 @@ static page_entry_t *get_pte(u32 vaddr, bool create)
     u32 idx = DIDX(vaddr);
     page_entry_t *entry = &pde[idx]; // 页表所在物理页
 
-    assert(create || (!create && entry->present)); // 不存在就创建
+    assert(create || entry->present); // 不存在就创建
 
     page_entry_t *table = (page_entry_t *)(PDE_MASK | (idx << 12));
 
@@ -314,7 +314,7 @@ static void flush_tlb(u32 vaddr)
 static u32 scan_page(bitmap_t *map, u32 count)
 {
     assert(count > 0);
-    index_t index = bitmap_scan(map, count);
+    int32 index = bitmap_scan(map, count);
 
     if (index == EOF)
     {
@@ -461,10 +461,10 @@ void page_fault(
     page_error_code_t *code = (page_error_code_t *)&error;
     task_t *task = running_task();
 
-    assert(KERNEL_MEMORY_SIZE <= vaddr < USER_STACK_TOP);
+    assert(KERNEL_MEMORY_SIZE <= vaddr && vaddr < USER_STACK_TOP);
 
     // 未映射物理页导致的异常
-    if (!code->present && (vaddr > USER_STACK_BOTTOM))
+    if (!code->present && (vaddr < task->brk || vaddr >= USER_STACK_BOTTOM))
     {
         u32 page = PAGE(IDX(vaddr));
         link_page(page);
@@ -472,5 +472,39 @@ void page_fault(
     }
 
     panic("page fault!!!");
+}
 
+int32 sys_brk(void *addr)
+{
+    DEBUG("task brk 0x%p\n", addr);
+
+    u32 brk = (u32)addr;
+    ASSERT_PAGE(brk);
+
+    task_t *task = running_task();
+    assert(task->uid != KERNEL_USER);
+
+    // TODO:上界后续修改 此处有问题
+    assert(KERNEL_MEMORY_SIZE < brk || brk < USER_STACK_BOTTOM);
+
+    u32 old_brk = task->brk;
+
+    if (old_brk > brk)
+    {
+        for (; brk < old_brk; brk += PAGE_SIZE)
+        {
+            unlink_page(brk);
+        }
+    }
+    // 剩余物理页不足以
+    else if (IDX(brk - old_brk) > free_pages)
+    {
+        // out of memory
+        return -1;
+    }
+    // brk 以下的内存都是合法的，已分配
+    // 实际使用时引发缺页异常动态分配
+
+    task->brk = brk;
+    return 0;
 }

@@ -215,6 +215,7 @@ static task_t *task_create(target_t target, const char *name, u32 priority, u32 
     task->uid = uid;
     task->vmap = &kernel_bitmap; // TODO: 为什么需要使用vmap
     task->pde = KERNEL_PAGE_DIR;
+    task->brk = KERNEL_MEMORY_SIZE;  // 内核结束位置
     // 如果栈顶移动到魔数的位置，或者该处魔数被修改
     // 说明栈溢出
     task->magic = YUI_MAGIC;
