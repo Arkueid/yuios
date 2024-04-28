@@ -138,10 +138,28 @@ bochsb: $(BUILD)/kernel.iso
 
 test: $(BUILD)/master.img
 
-# .PHONY: usb
-# usb: $()boot.bin /dev/sdb
-# 	sudo dd if=/dev/sdb of=tmp.bin bs=512 count=1 conv=notrunc
-# 	cp tmp.bin usb.bin
-# 	sudo rm tmp.bin
-# 	sudo dd if=boot.bin of=/dev/sdb bs=446 count=1 conv=notrunc
-# 	rm usb.bin
+
+QEMU:= qemu-system-i386 \
+	-m 32M \
+	-rtc base=localtime \
+
+QEMU_DISK:=-boot c \
+	-drive file=$(BUILD)/master.img,if=ide,index=0,media=disk,format=raw \
+
+QEMU_CDROM:=-boot d \
+	-drive file=$(BUILD)/kernel.iso,media=cdrom \
+
+QEMU_DEBUG:= -s -S
+
+.PHONY: qemu
+qemu: $(BUILD)/master.img
+	$(QEMU) $(QEMU_DISK)
+
+.PHONY: qemug
+qemug: $(BUILD)/master.img
+	$(QEMU) $(QEMU_DISK) $(QEMU_DEBUG)
+
+.PHONY: qemub
+qemub: $(BUILD)/kernel.iso
+	$(QEMU) $(QEMU_CDROM) \
+	# $(QEMU_DEBUG)

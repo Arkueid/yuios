@@ -13,7 +13,7 @@
 #define ZONE_RESERVED 2 // ards 不可用区域
 
 // 页大小为 0x1000
-#define IDX(addr) ((u32)addr >> 12)            // 页框地址转页索引
+#define IDX(addr) ((u32)addr >> 12)            // 线性地址转页索引
 #define PAGE(idx) ((u32)idx << 12)             // 页索引转页框地址
 #define DIDX(addr) (((u32)addr >> 22) & 0x3ff) // 获取页目录索引
 #define TIDX(addr) (((u32)addr >> 12) & 0x3ff) // 获取页表索引
@@ -24,7 +24,6 @@
 
 // 内核位图数据存放位置
 #define KERNEL_MAP_BITS 0x4000
-
 
 typedef struct ards_t
 {
@@ -149,6 +148,10 @@ void memory_map_init()
     }
 
     DEBUG("Total pages %d free pages %d\n", total_pages, free_pages);
+
+    u32 length = (IDX(KERNEL_MEMORY_SIZE) - IDX(MEMORY_BASE)) / 8;
+    bitmap_init(&kernel_bitmap, (u8 *)KERNEL_MAP_BITS, length, IDX(MEMORY_BASE));
+    bitmap_scan(&kernel_bitmap, memory_map_pages);
 }
 
 static u32 get_page()
@@ -191,6 +194,11 @@ static void put_page(u32 addr)
 
     assert(free_pages > 0 && free_pages < total_pages);
     DEBUG("PUT page 0x%p\n", addr);
+}
+
+u32 get_cr2()
+{
+    asm volatile("movl %cr2, %eax\n");
 }
 
 u32 get_cr3()
@@ -253,6 +261,7 @@ void mapping_init()
 
     // 页目录最后一个页表指向页目录本身，方便修改页目录
     page_entry_t *entry = &pde[1023];
+    // 指向自身，页目录既是目录页是页表
     entry_init(entry, IDX(KERNEL_PAGE_DIR));
 
     // cr3寄存器配置页表
@@ -262,18 +271,25 @@ void mapping_init()
     enable_page();
 }
 
+// 开启分页后访问 页目录
 static page_entry_t *get_pde()
 {
-    return (page_entry_t *)(0xfffff000);
+    // cr3 寄存器 页目录 的 物理地址 0x1000
+    // 高10位 全1 0x3ff -> 最后一个页表（页表指向页目录自身0x1000）
+    // 中间10位 全1 0x3ff -> 页目录自身又被看作为页表，它的最后一个页表项 还是指向自身
+    // 低12位 000 页内偏移 0x1000
+    // 最终该线性地址即为物理页 0x1000
+    return (page_entry_t *)(0xfffff000); // 线性地址
 }
 
+// 获取页表
 static page_entry_t *get_pte(u32 vaddr, bool create)
 {
     page_entry_t *pde = get_pde();
     u32 idx = DIDX(vaddr);
-    page_entry_t *entry = &pde[idx];
+    page_entry_t *entry = &pde[idx]; // 页表所在物理页
 
-    assert(create || entry->present);
+    assert(create || (!create && entry->present)); // 不存在就创建
 
     page_entry_t *table = (page_entry_t *)(PDE_MASK | (idx << 12));
 
@@ -292,6 +308,8 @@ static page_entry_t *get_pte(u32 vaddr, bool create)
 // 刷新快表
 static void flush_tlb(u32 vaddr)
 {
+    // r 占位符
+    // -> invlpg vaddr
     asm volatile("invlpg (%0)" ::"r"(vaddr) : "memory");
 }
 
@@ -398,9 +416,63 @@ void unlink_page(u32 vaddr)
 
     DEBUG("Unlink from 0x%p to 0x%p\n", vaddr, paddr);
 
-    if (memory_map[entry->index] == 1)
-    {
-        put_page(paddr);
-    }
+    put_page(paddr);
+
     flush_tlb(vaddr);
+}
+
+page_entry_t *copy_pde()
+{
+    task_t *task = running_task();
+    page_entry_t *pde = (page_entry_t *)alloc_kpage(1);
+
+    memcpy(pde, (void *)task->pde, PAGE_SIZE);
+
+    page_entry_t *entry = &pde[1023];
+    entry_init(entry, IDX(pde));
+
+    return pde;
+}
+
+typedef struct page_error_code_t
+{
+    u8 present : 1;
+    u8 write : 1;
+    u8 user : 1;
+    u8 reserved0 : 1;
+    u8 fetch : 1;
+    u8 protection : 1;
+    u8 shadow : 1;
+    u16 reserved1 : 8;
+    u8 sgx : 1;
+    u16 reserved2;
+} _packed page_error_code_t;
+
+void page_fault(
+    u32 vector,
+    u32 edi, u32 esi, u32 ebp, u32 esp,
+    u32 ebx, u32 edx, u32 ecx, u32 eax,
+    u32 gs, u32 fs, u32 es, u32 ds,
+    u32 vector0, u32 error, u32 eip, u32 cs, u32 eflags)
+{
+    assert(vector == 0xe);
+
+    u32 vaddr = get_cr2();
+    DEBUG("fault address 0x%p\n", vaddr);
+
+    page_error_code_t *code = (page_error_code_t *)&error;
+    task_t *task = running_task();
+
+    assert(KERNEL_MEMORY_SIZE <= vaddr < USER_STACK_TOP);
+
+    // 未映射物理页导致的异常
+    if (!code->present && (vaddr > USER_STACK_BOTTOM))
+    {
+        u32 page = PAGE(IDX(vaddr));
+        link_page(page);
+        return;
+    }
+
+    panic("page fault!!!");
+
 }

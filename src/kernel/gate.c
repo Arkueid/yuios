@@ -30,14 +30,14 @@ static void sys_default()
 // 系统调用-test
 static u32 sys_test()
 {
-    char *ptr;
+    // char *ptr;
 
-    link_page(0x1600000);
+    // link_page(0x1600000);
 
-    ptr = (char *) 0x1600000;
-    ptr[3] = 'T';
+    // ptr = (char *) 0x1600000;
+    // ptr[3] = 'T';
 
-    unlink_page(0x1600000);
+    // unlink_page(0x1600000);
 
     return 255;
 }

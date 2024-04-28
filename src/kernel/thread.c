@@ -27,6 +27,12 @@ lock_t mutex;
 
 extern void keyboard_read(char *ch, u32 count);
 
+void test_recursion()
+{
+    char tmp[0x400];
+    test_recursion();
+}
+
 static void user_init_thread()
 {
     u32 counter = 0;
@@ -34,9 +40,9 @@ static void user_init_thread()
     char ch;
     while (true)
     {
-        test();
-        sleep(1000);
         // printf("task is in user mode %d\n", counter++);
+        test_recursion();
+        sleep(1000);
     }
 }
 
@@ -53,6 +59,7 @@ void test_thread()
 
     while (true)
     {
+        DEBUG("test task %d...\n", counter++);
         sleep(2000);
     }
 }

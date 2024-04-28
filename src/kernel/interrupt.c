@@ -26,6 +26,7 @@ handler_t handler_table[IDT_SIZE];
 // 中断函数入口地址
 extern handler_t handler_entry_table[ENTRY_SIZE];
 extern void syscall_handler();
+extern void page_fault();
 
 static char *messages[] = {
     "Divide Error - #DE\0",
@@ -209,6 +210,8 @@ void idt_init()
     {
         handler_table[i] = exception_handler;
     }
+
+    handler_table[0xe] = page_fault;
 
     for (int i = 0x20; i < ENTRY_SIZE; i++)
     {

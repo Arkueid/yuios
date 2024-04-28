@@ -12,7 +12,12 @@
 // 用户栈顶地址 从0开始，128M的位置
 #define USER_STACK_TOP 0x8000000
 
-// 在内存中找两个页，存放页表和内核页
+// 用户栈大小 2M
+#define USER_STACK_SIZE 0x200000
+
+// 用户栈栈底
+#define USER_STACK_BOTTOM (USER_STACK_TOP - USER_STACK_SIZE)
+
 // 内核页目录
 #define KERNEL_PAGE_DIR 0x1000
 
@@ -37,6 +42,8 @@ typedef struct page_entry_t
     u32 index : 20;  // 页框索引
 } _packed page_entry_t;
 
+u32 get_cr2();
+
 u32 get_cr3();
 void set_cr3(u32 pde);
 
@@ -52,5 +59,7 @@ void link_page(u32 vaddr);
 
 // 释放用户态的物理内存
 void unlink_page(u32 vaddr);
+
+page_entry_t *copy_pde();
 
 #endif
