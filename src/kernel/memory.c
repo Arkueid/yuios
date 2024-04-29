@@ -178,7 +178,7 @@ static void put_page(u32 addr)
 
     assert(idx >= start_page && idx < total_pages);
 
-    // @todo 保证至少有一个引用
+    // 保证至少有一个引用
     assert(memory_map[idx] >= 1);
 
     // 物理引用减一
@@ -285,7 +285,7 @@ static page_entry_t *get_pte(u32 vaddr, bool create)
 {
     page_entry_t *pde = get_pde();
     u32 idx = DIDX(vaddr);
-    page_entry_t *entry = &pde[idx]; 
+    page_entry_t *entry = &pde[idx];
 
     assert(create || entry->present); // 不创建的情况下页应该存在
 
@@ -440,7 +440,6 @@ page_entry_t *copy_pde()
 {
     task_t *task = running_task();
     page_entry_t *pde = (page_entry_t *)alloc_kpage(1);
-
     memcpy(pde, (void *)task->pde, PAGE_SIZE);
 
     page_entry_t *entry = &pde[1023];
@@ -448,20 +447,20 @@ page_entry_t *copy_pde()
 
     page_entry_t *dentry;
 
-    for (size_t didx = 2; didx < 1023; didx ++)
+    for (size_t didx = 2; didx < 1023; didx++)
     {
         dentry = &pde[didx];
         if (!dentry->present)
             continue;
-        
+
         page_entry_t *pte = (page_entry_t *)(PDE_MASK | (didx << 12));
 
-        for (size_t tidx = 0; tidx < 1024; tidx ++)
+        for (size_t tidx = 0; tidx < 1024; tidx++)
         {
             entry = &pte[tidx];
             if (!entry->present)
                 continue;
-                
+
             // 至少有一个引用
             assert(memory_map[entry->index] > 0);
 
@@ -480,6 +479,41 @@ page_entry_t *copy_pde()
     set_cr3(task->pde);
 
     return pde;
+}
+
+void free_pde()
+{
+    task_t *task = running_task();
+    assert(task->uid != KERNEL_USER);
+
+    page_entry_t *pde = get_pde();
+
+    for (size_t didx = 2; didx < 1023; didx++)
+    {
+        page_entry_t *dentry = &pde[didx];
+        if (!dentry->present)
+        {
+            continue;
+        }
+        page_entry_t *pte = (page_entry_t *)(PDE_MASK | (didx << 12));
+
+        for (size_t tidx = 0; tidx < 1024; tidx++)
+        {
+            page_entry_t *entry = &pte[tidx];
+            if (!entry->present)
+            {
+                continue;
+            }
+
+            assert(memory_map[entry->index] > 0);
+            put_page(PAGE(entry->index));
+        }
+
+        put_page(PAGE(dentry->index));
+    }
+
+    free_kpage(task->pde, 1);
+    DEBUG("free pages %d\n", free_pages);
 }
 
 typedef struct page_error_code_t

@@ -38,6 +38,7 @@ typedef struct task_t
     u32 pde;                  // 页目录物理地址
     struct bitmap_t *vmap;    // 进程虚拟内存位图
     u32 brk;                  // 进程堆区内存最高地址
+    int status;               // 进程特殊状态
     u32 magic;                // 内核魔术，用于检测内存溢出
 } task_t;
 
@@ -102,12 +103,14 @@ void task_sleep(u32 ms);
 // 唤醒进程
 void task_wakeup();
 
-void task_to_user_mode(target_t target);
-
 pid_t sys_getpid();
-
 pid_t sys_getppid();
 
+// 创建进程
 pid_t task_fork();
+// 退出进程
+void task_exit(int status);
+
+void task_to_user_mode(target_t target);
 
 #endif

@@ -47,7 +47,7 @@ static task_t *get_free_task()
             return task;
         }
     }
-    panic("No more tasks, max is %d\n", NR_TASKS);
+    panic("No more tasks, max is 64");
 }
 
 // 从任务队列中查找某种状态的任务，自身除外
@@ -362,9 +362,9 @@ void task_to_user_mode(target_t target)
 {
     task_t *task = running_task();
 
-    task->vmap = kmalloc(sizeof(bitmap_t)); // todo kfree
+    task->vmap = kmalloc(sizeof(bitmap_t)); 
 
-    void *buf = (void *)alloc_kpage(1); // todo free_kpage
+    void *buf = (void *)alloc_kpage(1);
 
     bitmap_init(task->vmap, buf, PAGE_SIZE, KERNEL_MEMORY_SIZE / PAGE_SIZE);
 
@@ -407,6 +407,40 @@ void task_to_user_mode(target_t target)
     asm volatile(
         "movl %0, %%esp\n"
         "jmp interrupt_exit\n" ::"m"(iframe));
+}
+
+void task_exit(int status)
+{
+    task_t *task = running_task();
+
+    assert(task->node.prev == NULL &&
+        task->node.next == NULL &&
+        task->state == TASK_RUNNING
+    );
+
+    task->state = TASK_DIED;
+    task->status = status;
+
+    free_pde();
+
+    free_kpage((u32)task->vmap->bits, 1);
+    kfree(task->vmap);
+
+    for (size_t i = 0; i < NR_TASKS; i++)
+    {
+        task_t *child = task_table[i];
+
+        if (!child)
+            continue;
+        
+        if (child->ppid != task->pid)
+            continue;
+        
+        // 将子进程交给上级进程管理
+        child->ppid = task->ppid;
+    }
+    DEBUG("task(pid=%d) exit with code %d...\n", task->pid, task->status);
+    schedule();
 }
 
 extern void idle_thread();
