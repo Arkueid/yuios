@@ -285,10 +285,11 @@ static page_entry_t *get_pte(u32 vaddr, bool create)
 {
     page_entry_t *pde = get_pde();
     u32 idx = DIDX(vaddr);
-    page_entry_t *entry = &pde[idx]; // 页表所在物理页
+    page_entry_t *entry = &pde[idx]; 
 
-    assert(create || entry->present); // 不存在就创建
+    assert(create || entry->present); // 不创建的情况下页应该存在
 
+    // 页表的虚拟地址
     page_entry_t *table = (page_entry_t *)(PDE_MASK | (idx << 12));
 
     if (!entry->present)
@@ -296,7 +297,9 @@ static page_entry_t *get_pte(u32 vaddr, bool create)
         DEBUG("Get and create page table entry for 0x%p\n", vaddr);
 
         u32 page = get_page();
+        // 页表所在页框号 x
         entry_init(entry, IDX(page));
+        // 通过table找到 页框号x，并初始化这段页框
         memset(table, 0, PAGE_SIZE);
     }
 
@@ -458,17 +461,18 @@ page_entry_t *copy_pde()
             entry = &pte[tidx];
             if (!entry->present)
                 continue;
-            
+                
+            // 至少有一个引用
             assert(memory_map[entry->index] > 0);
 
             // 只读
             entry->write = false;
-
+            // 引用数 ++
             memory_map[entry->index]++;
-
+            // 引用数不能超过255
             assert(memory_map[entry->index] < 255);
         }
-
+        // 应该是写时 修改，
         u32 paddr = copy_page(pte);
         dentry->index = IDX(paddr);
     }
@@ -508,6 +512,33 @@ void page_fault(
     task_t *task = running_task();
 
     assert(KERNEL_MEMORY_SIZE <= vaddr && vaddr < USER_STACK_TOP);
+
+    if (code->present)
+    {
+        assert(code->write);
+
+        page_entry_t *pte = get_pte(vaddr, false);
+        page_entry_t *entry = &pte[TIDX(vaddr)];
+
+        assert(entry->present);
+        assert(memory_map[entry->index] > 0);
+
+        if (memory_map[entry->index] == 1)
+        {
+            entry->write = true;
+            DEBUG("Write page for 0x%p\n", vaddr);
+        }
+        else
+        {
+            void *page = (void *)PAGE(IDX(vaddr));
+            u32 paddr = copy_page(page);
+            memory_map[entry->index]--;
+            entry_init(entry, IDX(paddr));
+            flush_tlb(vaddr);
+            DEBUG("Copy page for 0x%p\n", vaddr);
+        }
+        return;
+    }
 
     // 未映射物理页导致的异常
     if (!code->present && (vaddr < task->brk || vaddr >= USER_STACK_BOTTOM))

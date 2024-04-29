@@ -7,7 +7,6 @@
 #include <yui/stdio.h>
 #include <yui/arena.h>
 
-
 void idle_thread()
 {
     set_interrupt_state(true);
@@ -27,7 +26,7 @@ void idle_thread()
 lock_t mutex;
 
 extern void keyboard_read(char *ch, u32 count);
-
+extern void hang();
 
 static void user_init_thread()
 {
@@ -40,11 +39,11 @@ static void user_init_thread()
 
         if (pid)
         {
-            printf("fork in parent(pid=%d, ppid=%d): pid=%d\n", pid, getpid(), getppid());
+            printf("fork: parent(pid=%d, ppid=%d): return pid=%d\n", getpid(), getppid(), pid);
         }
         else
         {
-            printf("fork in child(pid=%d, ppid=%d)\n", getpid(), getppid());
+            printf("fork: child(pid=%d, ppid=%d): return pid=%d\n", getpid(), getppid(), pid);
         }
         hang();
         sleep(1000);
@@ -64,7 +63,7 @@ void test_thread()
 
     while (true)
     {
-        printf("test thread: pid=%d, ppid=%d...\n", getpid(), getppid());
+        // printf("test thread: pid=%d, ppid=%d...\n", getpid(), getppid());
         sleep(2000);
     }
 }

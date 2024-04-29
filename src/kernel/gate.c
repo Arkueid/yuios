@@ -50,7 +50,7 @@ int32 sys_write(fd_t fd, char *buf, u32 len)
         return console_write(buf, len);
     }
     // TODO: write
-    panic("write!!!");
+    panic("write error: unknown fd %d!!!", fd);
     return 0;
 }
 
