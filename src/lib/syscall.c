@@ -20,6 +20,17 @@ static _inline u32 _syscall1(u32 nr, u32 arg)
     return ret;
 }
 
+static _inline u32 _syscall2(u32 nr, u32 arg1, u32 arg2)
+{
+    u32 ret;
+    asm volatile(
+        "int $0x80\n"
+        : "=a"(ret)
+        : "a"(nr), "b"(arg1), "c"(arg2)
+    );
+    return ret;
+}
+
 static _inline u32 _syscall3(u32 nr, u32 arg1, u32 arg2, u32 arg3)
 {
     u32 ret;
@@ -79,4 +90,9 @@ pid_t fork()
 void exit(int status)
 {
     _syscall1(SYS_NR_EXIT, (u32)status);
+}
+
+pid_t waitpid(pid_t pid, int32 *status)
+{
+    return _syscall2(SYS_NR_WAITPID, pid, (u32)status);
 }

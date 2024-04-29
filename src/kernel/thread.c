@@ -37,13 +37,21 @@ static void user_init_thread()
     {
         pid_t pid = fork();
 
+        int status;
         if (pid)
         {
             printf("fork: parent(pid=%d, ppid=%d): return pid=%d\n", getpid(), getppid(), pid);
+            pid_t child = waitpid(pid, &status);
+            printf("wait pid %d status %d %d\n", 
+                child,
+                status,
+                counter++
+            );
         }
         else
         {
             printf("fork: child(pid=%d, ppid=%d): return pid=%d\n", getpid(), getppid(), pid);
+            sleep(1000);
             exit(0);
         }
         sleep(1000);
@@ -52,7 +60,7 @@ static void user_init_thread()
 
 void init_thread()
 {
-    intr_frame_t iframe;  // 在任务栈栈底创建一个 中断帧
+    intr_frame_t iframe; // 在任务栈栈底创建一个 中断帧
     task_to_user_mode(user_init_thread);
 }
 
@@ -67,4 +75,3 @@ void test_thread()
         sleep(2000);
     }
 }
-

@@ -323,11 +323,11 @@ pid_t task_fork()
 {
     task_t *task = running_task();
 
-    assert(task->node.next == NULL &&  // 进程不在就绪、阻塞队列，且处于执行态
+    assert(task->node.next == NULL && // 进程不在就绪、阻塞队列，且处于执行态
            task->node.prev == NULL &&
            task->state == TASK_RUNNING);
 
-    task_t *child = get_free_task();  // 创建新进程
+    task_t *child = get_free_task(); // 创建新进程
     pid_t pid = child->pid;
 
     // 子进程的pid会被父进程覆盖
@@ -358,11 +358,65 @@ pid_t task_fork()
     return child->pid;
 }
 
+// 等待标识符为 pid 子进程的结束，或发出信号
+// pid 为 -1 则等待任意子进程
+// 若找到一个结束的子进程则直接返回
+// 若子进程未结束，则当前进程进入阻塞状态
+pid_t task_waitpid(pid_t pid, int32 *status)
+{
+    task_t *task = running_task();
+    task_t *child = NULL;
+
+    while (true)
+    {
+        bool has_child = false;
+        for (size_t i = 2; i < NR_TASKS; i++)
+        {
+            task_t *ptr = task_table[i];
+            if (!ptr)
+                continue;
+
+            if (ptr->ppid != task->pid)
+                continue;
+
+            // TODO: pid = -1 表示任何子线程
+            if (pid != ptr->pid && pid != -1)
+                continue;
+
+            // 子进程已结束，直接释放
+            if (ptr->state == TASK_DIED)
+            {
+                child = ptr;
+                task_table[i] = NULL;
+                goto rollback;
+            }
+
+            has_child = true;
+        }
+
+        // 存在子进程且子进程未结束，当前进程阻塞，等待子进程结束
+        if (has_child)
+        {
+            task->waitpid = pid;
+            task_block(task, NULL, TASK_WAITING);
+            continue;
+        }
+        break;
+    }
+
+rollback:
+    *status = child->status;
+    u32 ret = child->pid;
+    // 释放PCB
+    free_kpage((u32)child, 1);
+    return ret;
+}
+
 void task_to_user_mode(target_t target)
 {
     task_t *task = running_task();
 
-    task->vmap = kmalloc(sizeof(bitmap_t)); 
+    task->vmap = kmalloc(sizeof(bitmap_t));
 
     void *buf = (void *)alloc_kpage(1);
 
@@ -414,9 +468,8 @@ void task_exit(int status)
     task_t *task = running_task();
 
     assert(task->node.prev == NULL &&
-        task->node.next == NULL &&
-        task->state == TASK_RUNNING
-    );
+           task->node.next == NULL &&
+           task->state == TASK_RUNNING);
 
     task->state = TASK_DIED;
     task->status = status;
@@ -432,14 +485,24 @@ void task_exit(int status)
 
         if (!child)
             continue;
-        
+
         if (child->ppid != task->pid)
             continue;
-        
+
         // 将子进程交给上级进程管理
         child->ppid = task->ppid;
     }
     DEBUG("task(pid=%d) exit with code %d...\n", task->pid, task->status);
+
+    task_t *parent = task_table[task->ppid];
+    // 父进程状态为等待且父进程等待
+    if (parent->state == TASK_WAITING &&
+            (parent->waitpid == -1 ||
+        parent->waitpid == task->pid) )
+    {
+        task_unblock(parent);
+    }
+
     schedule();
 }
 
