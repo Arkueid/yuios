@@ -8,10 +8,10 @@
 #define PIT_CHAN2_REG 0x42
 #define PIT_CTRL_REG 0x43
 
-#define HZ 100  // 每毫秒产生时钟中断的次数
-#define OSCILLATOR 1193182 // 震荡器1ms内产生的脉冲数
+#define HZ 100  // 1s 内发出的中断次数
+#define OSCILLATOR 1193182 // 晶振的最大频率(Hz)
 #define CLOCK_COUNTER (OSCILLATOR / HZ) // 计数器产生一次脉冲所需的振荡器脉冲次数
-#define JIFFY (1000 / HZ)  // 一毫秒所需的jiffies
+#define JIFFY (1000 / HZ)  // 1个时间片10ms，每个时间片代表的毫秒数
 
 #define SPEAKER_REG 0x61
 #define BEEP_HZ 440
@@ -66,6 +66,15 @@ void clock_handler(int vector)
     {
         schedule();
     }
+}
+
+extern u32 startup_time;
+
+// 系统调用 time
+// 当前时间戳，秒数
+time_t sys_time()
+{
+    return startup_time + (jiffies * JIFFY) / 1000;
 }
 
 // 初始化可编程计数器

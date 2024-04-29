@@ -54,6 +54,8 @@ int32 sys_write(fd_t fd, char *buf, u32 len)
     return 0;
 }
 
+extern time_t sys_time();
+
 void syscall_init()
 {
     for (size_t i = 0; i < SYSCALL_SIZE; i++)
@@ -68,6 +70,8 @@ void syscall_init()
     syscall_table[SYS_NR_FORK] = task_fork;
 
     syscall_table[SYS_NR_WAITPID] = task_waitpid;
+
+    syscall_table[SYS_NR_TIME] = sys_time;
 
     syscall_table[SYS_NR_WRITE] = sys_write;
 

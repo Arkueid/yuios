@@ -30,8 +30,6 @@ extern void hang();
 
 static void user_init_thread()
 {
-    u32 counter = 0;
-
     char ch;
     while (true)
     {
@@ -45,7 +43,7 @@ static void user_init_thread()
             printf("wait pid %d status %d %d\n", 
                 child,
                 status,
-                counter++
+                time()
             );
         }
         else

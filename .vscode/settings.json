@@ -23,6 +23,18 @@
         "bitmap.h": "c",
         "cstring": "c",
         "syscall.h": "c",
-        "global.h": "c"
+        "global.h": "c",
+        "*.tcc": "c",
+        "charconv": "c",
+        "chrono": "c",
+        "format": "c",
+        "future": "c",
+        "iomanip": "c",
+        "limits": "c",
+        "numeric": "c",
+        "ratio": "c",
+        "streambuf": "c",
+        "tuple": "c",
+        "type_traits": "c"
     }
 }

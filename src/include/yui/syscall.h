@@ -10,6 +10,7 @@ typedef enum syscall_t
     SYS_NR_FORK,
     SYS_NR_WRITE,
     SYS_NR_WAITPID,
+    SYS_NR_TIME,
     SYS_NR_GETPID, // 获取进程id
     SYS_NR_BRK,
     SYS_NR_GETPPID, // 获取父进程id
@@ -36,5 +37,7 @@ pid_t fork();
 void exit(int status);
 
 pid_t waitpid(pid_t pid, int32 *status);
+
+time_t time();
 
 #endif
