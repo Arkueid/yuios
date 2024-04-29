@@ -602,9 +602,9 @@ int32 sys_brk(void *addr)
 
     if (old_brk > brk)
     {
-        for (; brk < old_brk; brk += PAGE_SIZE)
+        for (u32 page = brk; brk < old_brk; page += PAGE_SIZE)
         {
-            unlink_page(brk);
+            unlink_page(page);
         }
     }
     // 剩余物理页不足以

@@ -30,28 +30,8 @@ extern void hang();
 
 static void user_init_thread()
 {
-    char ch;
     while (true)
     {
-        pid_t pid = fork();
-
-        int status;
-        if (pid)
-        {
-            printf("fork: parent(pid=%d, ppid=%d): return pid=%d\n", getpid(), getppid(), pid);
-            pid_t child = waitpid(pid, &status);
-            printf("wait pid %d status %d %d\n", 
-                child,
-                status,
-                time()
-            );
-        }
-        else
-        {
-            printf("fork: child(pid=%d, ppid=%d): return pid=%d\n", getpid(), getppid(), pid);
-            sleep(1000);
-            exit(0);
-        }
         sleep(1000);
     }
 }
@@ -65,11 +45,9 @@ void init_thread()
 void test_thread()
 {
     set_interrupt_state(true);
-    u32 counter = 0;
 
     while (true)
     {
-        // printf("test thread: pid=%d, ppid=%d...\n", getpid(), getppid());
         sleep(2000);
     }
 }

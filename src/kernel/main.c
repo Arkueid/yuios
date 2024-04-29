@@ -15,7 +15,7 @@ extern void sys_tests();
 extern void keyboard_init();
 extern void tss_init();
 extern void arena_init();
-
+extern void ide_init();
 
 void kernel_init()
 {
@@ -26,6 +26,7 @@ void kernel_init()
     interrupt_init();
     clock_init();
     time_init();
+    ide_init();
     // rtc_init();
 
     keyboard_init();
