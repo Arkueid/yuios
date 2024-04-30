@@ -5,6 +5,7 @@
 #include <yui/task.h>
 #include <yui/console.h>
 #include <yui/memory.h>
+#include <yui/device.h>
 
 #define SYSCALL_SIZE 256
 
@@ -27,34 +28,30 @@ static void sys_default()
     panic("syscall not implemented!!!");
 }
 
-#include <yui/string.h>
-#include <yui/ide.h>
-
-extern ide_ctrl_t controllers[2];
-
 // 系统调用-test
 static u32 sys_test()
 {
-    u16 *buf = (u16 *)alloc_kpage(1);
-    DEBUG("pio read buffer 0x%p\n", buf);
-    ide_disk_t *disk = &controllers[0].disks[0];
-    ide_pio_read(disk, buf, 4, 0);
+    char ch;
+    device_t *device;
 
-    memset(buf, 0x5a, 512);
+    device = device_find(DEV_KEYBOARD, 0);
+    assert(device);
+    device_read(device->dev, &ch, 1, 0, 0);
 
-    ide_pio_write(disk, buf, 1, 1);
-
-    free_kpage((u32)buf, 1);
+    device = device_find(DEV_CONSOLE, 0);
+    assert(device);
+    device_write(device->dev, &ch, 1, 0, 0);
 
     return 255;
 }
 
+extern int32 console_write();
 
 int32 sys_write(fd_t fd, char *buf, u32 len)
 {
     if (fd == stdout || fd == stderr)
     {
-        return console_write(buf, len);
+        return console_write(NULL, buf, len);
     }
     // TODO: write
     panic("write error: unknown fd %d!!!", fd);
@@ -85,8 +82,7 @@ void syscall_init()
     syscall_table[SYS_NR_GETPID] = sys_getpid;
     syscall_table[SYS_NR_BRK] = sys_brk;
     syscall_table[SYS_NR_GETPPID] = sys_getppid;
-    
+
     syscall_table[SYS_NR_SLEEP] = task_sleep;
     syscall_table[SYS_NR_YEILD] = task_yield;
 }
-

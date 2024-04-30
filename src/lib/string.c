@@ -14,6 +14,21 @@ char *strcpy(char *dest, const char *src)
     }
 }
 
+char *strncpy(char *dest, const char *src, size_t count)
+{
+    char *ptr = dest;
+    size_t nr = 0;
+    for (; nr < count; nr++)
+    {
+        *ptr++ = *src;
+        // 当前字符是 end of string '\0'
+        if (*src++ == EOS)
+            return dest;
+    }
+    dest[count - 1] = EOS;
+    return dest;
+}
+
 // 字符串拼接，可能会有问题？
 char *strcat(char *dest, const char *src)
 {

@@ -16,6 +16,7 @@ header_start:
     dd 8    ; size
 header_end:
 
+extern device_init
 extern console_init
 extern memory_init
 extern kernel_init
@@ -32,6 +33,7 @@ _start:
     push ebx ; ards count
     push eax ; magic
 
+    call device_init    ; 初始化设备
     call console_init   ; 初始化控制台
     call gdt_init       ; 初始化gdt
 

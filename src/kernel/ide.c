@@ -63,6 +63,14 @@
 #define IDE_LBA_MASTER 0b11100000 // 主盘 LBA
 #define IDE_LBA_SLAVE 0b11110000  // 从盘 LBA
 
+typedef enum PART_FS
+{
+    PART_FS_FAT12,    // FAT12
+    PART_FS_ENTENDED, // 拓展分区
+    PART_FS_MINIX,    // minux
+    PART_FS_LINUX,    // linux
+} PART_FS;
+
 typedef struct ide_params_t
 {
     u16 config;                 // 0 General configuration bits
@@ -98,6 +106,16 @@ typedef struct ide_params_t
     u16 RESERVED[254 - 223];    // 254
     u16 integrity;              // 校验和
 } _packed ide_params_t;
+
+int ide_pio_part_read(ide_part_t *part, void *buf, u8 count, index_t lba)
+{
+    return ide_pio_read(part->disk, buf, count, part->start + lba);
+}
+
+int ide_pio_part_write(ide_part_t *part,  void *buf, u8 count, index_t lba)
+{
+    return ide_pio_write(part->disk, buf, count, part->start + lba);
+}
 
 ide_ctrl_t controllers[IDE_CTRL_NR];
 
@@ -352,6 +370,63 @@ rollback:
     return ret;
 }
 
+static void ide_part_init(ide_disk_t *disk, u16 *buf)
+{
+    // 磁盘不可用
+    if (!disk->total_lba)
+        return;
+    
+    // 读取主引导扇区
+    ide_pio_read(disk, buf, 1, 0);
+
+    // 初始化主引导扇区
+    boot_sector_t *boot = (boot_sector_t *)buf;
+
+    for (size_t i = 0; i < IDE_PART_NR; i ++)
+    {
+        part_entry_t *entry = &boot->entry[i];
+        ide_part_t *part = &disk->parts[i];
+        if (!entry->count)
+            continue;
+        
+        sprintf(part->name, "%s%d", disk->name, i + 1);
+
+        DEBUG("part %s \n", part->name);
+        DEBUG("    bootable %d\n", entry->bootable);
+        DEBUG("    start %d\n", entry->start);
+        DEBUG("    count %d\n", entry->count);
+        DEBUG("    system 0x%x\n", entry->system);
+
+        part->disk = disk;
+        part->count = entry->count;
+        part->system = entry->system;
+        part->start = entry->start;
+
+        if (entry->system == PART_FS_ENTENDED)
+        {
+            DEBUG("unsupported extended partion!!!\n");
+
+            boot_sector_t *eboot = (boot_sector_t *)(buf + SECTOR_SIZE);
+
+            ide_pio_read(disk, (void *)eboot, 1, entry->start);
+
+            for (size_t j = 0; j < IDE_PART_NR; j++)
+            {
+                part_entry_t *eentry = &eboot->entry[j];
+                if (!eentry->count)
+                    continue;
+                DEBUG("part %d extend %d\n", i, j);
+                DEBUG("    bootable %d\n", eentry->bootable);
+                DEBUG("    start %d\n", eentry->start);
+                DEBUG("    count %d\n", eentry->count);
+                DEBUG("    system 0x%x\n", eentry->system);
+
+            }
+        }
+    }
+
+}
+
 static void ide_ctrl_init()
 {
     u16 *buf = (u16 *)alloc_kpage(1);
@@ -392,11 +467,11 @@ static void ide_ctrl_init()
                 disk->selector = IDE_LBA_MASTER;
             }
             ide_identify(disk, buf);
+            ide_part_init(disk, buf);
         }
     }
-    free_kpage((u32) buf, 1);
+    free_kpage((u32)buf, 1);
 }
-
 
 // 硬盘初始化
 void ide_init()

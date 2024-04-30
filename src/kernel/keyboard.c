@@ -5,9 +5,10 @@
 #include <yui/fifo.h>
 #include <yui/mutex.h>
 #include <yui/task.h>
+#include <yui/device.h>
 
-#define KEYBOARD_CMD_LED 0xED// 设置 LED 状态
-#define KEYBOARD_CMD_ACK 0xFA// ACK
+#define KEYBOARD_CMD_LED 0xED // 设置 LED 状态
+#define KEYBOARD_CMD_ACK 0xFA // ACK
 
 #define KEYBOARD_DATA_PORT 0x60
 #define KEYBOARD_CTRL_PORT 0x64
@@ -233,13 +234,12 @@ static bool extcode_state;  // 拓展码状态
 // shift 键状态
 #define shift_state (keymap[KEY_SHIFT_L][2] || keymap[KEY_SHIFT_R][2])
 
-
 static lock_t lock;
 static task_t *waiter;
 
 #define BUFFER_SIZE 64
 static char buf[BUFFER_SIZE];
-static fifo_t fifo;  // 循环队列
+static fifo_t fifo; // 循环队列
 
 static void keyboard_wait()
 {
@@ -375,7 +375,7 @@ void keyboard_handler(int vector)
     }
 }
 
-u32 keyboard_read(char *buf, u32 count)
+u32 keyboard_read(void *dev, char *buf, u32 count)
 {
     lock_accquire(&lock);
 
@@ -409,4 +409,9 @@ void keyboard_init()
 
     set_interrupt_handler(IRQ_KEYBOARD, keyboard_handler);
     set_interrupt_mask(IRQ_KEYBOARD, true);
+
+    device_install(
+        DEV_CHAR, DEV_KEYBOARD,
+        NULL, "keyboard", 0,
+        NULL, keyboard_read, NULL);
 }

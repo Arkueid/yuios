@@ -40,8 +40,6 @@ static void user_init_thread()
 void init_thread()
 {
     intr_frame_t iframe; // 在任务栈栈底创建一个 中断帧
-    set_interrupt_state(true);
-    test();
     task_to_user_mode(user_init_thread);
 }
 
@@ -51,6 +49,7 @@ void test_thread()
 
     while (true)
     {
-        sleep(2000);
+        // sleep(2000);
+        test();
     }
 }

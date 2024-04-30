@@ -35,6 +35,7 @@
         "ratio": "c",
         "streambuf": "c",
         "tuple": "c",
-        "type_traits": "c"
+        "type_traits": "c",
+        "device.h": "c"
     }
 }

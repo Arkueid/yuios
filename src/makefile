@@ -47,6 +47,7 @@ LDFLAGS:=$(strip ${LDFLAGS})
 $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 	$(BUILD)/kernel/main.o \
 	$(BUILD)/kernel/io.o \
+	$(BUILD)/kernel/device.o \
 	$(BUILD)/kernel/console.o \
 	$(BUILD)/kernel/printk.o \
 	$(BUILD)/kernel/assert.o \
@@ -90,6 +91,7 @@ $(BUILD)/master.img: $(BUILD)/boot/boot.bin \
 		$(BUILD)/boot/loader.bin \
 		$(BUILD)/system.bin \
 		$(BUILD)/system.map \
+		$(SRC)/utils/master.sfdisk \
 
 	yes | bximage -q -hd=16 -func=create -sectsize=512 -imgmode=flat $@
 	dd if=$(BUILD)/boot/boot.bin of=$@ bs=512 count=1 conv=notrunc
@@ -98,6 +100,9 @@ $(BUILD)/master.img: $(BUILD)/boot/boot.bin \
 	test -n "$$(find $(BUILD)/system.bin -size -100k)"
 	
 	dd if=$(BUILD)/system.bin of=$@ bs=512 count=200 seek=10 conv=notrunc
+
+# 对硬盘进行分区
+	sfdisk $@ < $(SRC)/utils/master.sfdisk
 
 $(BUILD)/slave.img:
 	yes | bximage -q -hd=32 -func=create -sectsize=512 -imgmode=flat $@

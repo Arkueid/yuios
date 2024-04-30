@@ -2,6 +2,7 @@
 #include <yui/io.h>
 #include <yui/string.h>
 #include <yui/interrupt.h>
+#include <yui/device.h>
 
 #define CRT_ADDR_REG 0x3D4 // 地址寄存器
 #define CRT_DATA_REG 0x3D5 // 数据寄存器
@@ -184,14 +185,14 @@ static void command_del()
 
 extern void start_beep();
 
-int32 console_write(char *buf, u32 count)
+int32 console_write(void *dev, char *buf, u32 count)
 {
     bool intr = interrupt_disable();
 
     // 以下为临界区代码
     char ch;
     int32 nr = 0;
-    while (nr ++ < count)
+    while (nr++ < count)
     {
         ch = *buf++;
         switch (ch)
@@ -251,4 +252,9 @@ void console_init()
     // set_cursor();
 
     console_clear();
+
+    device_install(
+        DEV_CHAR, DEV_CONSOLE,
+        NULL, "console", 0,
+        NULL, NULL, console_write);
 }
