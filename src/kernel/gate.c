@@ -39,7 +39,6 @@ static u32 sys_test()
     DEBUG("pio read buffer 0x%p\n", buf);
     ide_disk_t *disk = &controllers[0].disks[0];
     ide_pio_read(disk, buf, 4, 0);
-    BMB;
 
     memset(buf, 0x5a, 512);
 

@@ -32,7 +32,7 @@ static void user_init_thread()
 {
     while (true)
     {
-        printf("user thread %d\n", time());
+        // printf("user thread %d\n", time());
         sleep(1000);
     }
 }

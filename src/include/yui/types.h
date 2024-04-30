@@ -6,6 +6,9 @@
 
 #define EOS '\0'  // 字符串结尾
 
+#define CONCAT(X, Y) X##Y
+#define RESERVED_TOKEN(X, Y) CONCAT(X, Y)
+#define RESERVED RESERVED_TOKEN(reserved, __LINE__)
 
 #ifndef __cplusplus
 #define bool _Bool
