@@ -32,6 +32,7 @@ static void user_init_thread()
 {
     while (true)
     {
+        printf("user thread %d\n", time());
         sleep(1000);
     }
 }
@@ -39,6 +40,8 @@ static void user_init_thread()
 void init_thread()
 {
     intr_frame_t iframe; // 在任务栈栈底创建一个 中断帧
+    set_interrupt_state(true);
+    test();
     task_to_user_mode(user_init_thread);
 }
 

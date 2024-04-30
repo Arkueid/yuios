@@ -65,6 +65,26 @@
 
 ide_ctrl_t controllers[IDE_CTRL_NR];
 
+void ide_handler(int vector)
+{
+    send_eoi(vector); // 向中断控制器发送中断处理结束信号
+
+    // 得到中断向量对应的控制器
+    // 区分 硬盘1中断还是2中断
+    ide_ctrl_t *ctrl = &controllers[vector - IRQ_HARDDISK - 0x20];
+
+    u8 state = inb(ctrl->iobase + IDE_STATUS);
+    DEBUG("harddisk interrupt vector %d state 0x%x\n",
+          vector, state);
+
+    if (ctrl->waiter)
+    {
+        // 如果有阻塞进程，则唤醒进程
+        task_unblock(ctrl->waiter);
+        ctrl->waiter = NULL;
+    }
+}
+
 static u32 ide_error(ide_ctrl_t *ctrl)
 {
     u8 error = inb(ctrl->iobase + IDE_ERR);
@@ -156,6 +176,8 @@ int ide_pio_read(ide_disk_t *disk, void *buf, u8 count, index_t lba)
 {
     assert(count > 0);
 
+    assert(!get_interrupt_state()); // 异步方式读写，不允许中断
+
     ide_ctrl_t *ctrl = disk->ctrl;
 
     lock_accquire(&ctrl->lock);
@@ -173,6 +195,14 @@ int ide_pio_read(ide_disk_t *disk, void *buf, u8 count, index_t lba)
 
     for (size_t i = 0; i < count; i++)
     {
+        // 阻塞当前进程，直到磁盘完成读取并发送中断信号
+        task_t *task = running_task();
+        if (task->state == TASK_RUNNING)
+        {
+            ctrl->waiter = task;
+            task_block(task, NULL, TASK_BLOCKED);
+        }
+
         ide_busy_wait(ctrl, IDE_SR_DRQ);
         u32 offset = ((u32)buf + i * SECTOR_SIZE);
         ide_pio_read_sector(disk, (u16 *)offset);
@@ -186,6 +216,7 @@ int ide_pio_read(ide_disk_t *disk, void *buf, u8 count, index_t lba)
 int ide_pio_write(ide_disk_t *disk, void *buf, u8 count, index_t lba)
 {
     assert(count > 0);
+    assert(!get_interrupt_state()); // 异步方式读写，不允许中断
 
     ide_ctrl_t *ctrl = disk->ctrl;
 
@@ -207,6 +238,14 @@ int ide_pio_write(ide_disk_t *disk, void *buf, u8 count, index_t lba)
     {
         u32 offset = ((u32)buf + i * SECTOR_SIZE);
         ide_pio_write_sector(disk, (u16 *)offset);
+
+        task_t *task = running_task();
+        // TODO: 系统初始化时不能使用异步方式
+        if (task->state == TASK_RUNNING) 
+        {
+            ctrl->waiter = task;
+            task_block(task, NULL, TASK_BLOCKED);
+        }
 
         ide_busy_wait(ctrl, IDE_SR_NULL);
     }
@@ -259,19 +298,10 @@ void ide_init()
     DEBUG("IDE INIT...\n");
 
     ide_ctrl_init();
-
-    void *buf = (void *)alloc_kpage(1);
-
-    // 读取磁盘0号区块
-    ide_pio_read(&controllers[0].disks[0], buf, 1, 0);
-
-    BMB;
-    memset(buf, 0x5a, SECTOR_SIZE);
-
-    BMB;
-
-    // 写入1号区块
-    ide_pio_write(&controllers[0].disks[0], buf, 1, 1);
-
-    free_kpage((u32)buf, 1);
+    // 注册硬盘中断，并打开中断
+    set_interrupt_handler(IRQ_HARDDISK, ide_handler);
+    set_interrupt_handler(IRQ_HARDDISK2, ide_handler);
+    set_interrupt_mask(IRQ_HARDDISK, true);
+    set_interrupt_mask(IRQ_HARDDISK2, true);
+    set_interrupt_mask(IRQ_CASCADE, true);
 }

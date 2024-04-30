@@ -27,17 +27,25 @@ static void sys_default()
     panic("syscall not implemented!!!");
 }
 
+#include <yui/string.h>
+#include <yui/ide.h>
+
+extern ide_ctrl_t controllers[2];
+
 // 系统调用-test
 static u32 sys_test()
 {
-    // char *ptr;
+    u16 *buf = (u16 *)alloc_kpage(1);
+    DEBUG("pio read buffer 0x%p\n", buf);
+    ide_disk_t *disk = &controllers[0].disks[0];
+    ide_pio_read(disk, buf, 4, 0);
+    BMB;
 
-    // link_page(0x1600000);
+    memset(buf, 0x5a, 512);
 
-    // ptr = (char *) 0x1600000;
-    // ptr[3] = 'T';
+    ide_pio_write(disk, buf, 1, 1);
 
-    // unlink_page(0x1600000);
+    free_kpage((u32)buf, 1);
 
     return 255;
 }
