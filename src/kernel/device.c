@@ -4,6 +4,7 @@
 #include <yui/assert.h>
 #include <yui/debug.h>
 #include <yui/arena.h>
+#include <yui/yui.h>
 
 #define DEVICE_NR 64 // 设备数量
 
@@ -87,6 +88,8 @@ void device_init()
         device->ioctl = NULL;
         device->read = NULL;
         device->write = NULL;
+
+        list_init(&device->request_list);
     }
 }
 
@@ -110,4 +113,73 @@ device_t *device_get(dev_t dev)
     device_t *device = &devices[dev];
     assert(device->type != DEV_NULL);
     return device;
+}
+
+// 执行块设备请求
+static void do_request(request_t *req)
+{
+    switch (req->type)
+    {
+    case REQ_READ:
+        device_read(req->dev, req->buf, req->count, req->idx, req->flags);
+        break;
+    case REQ_WRITE:
+        device_write(req->dev, req->buf, req->count, req->idx, req->flags);
+        break;
+    default:
+        panic("req type %d unknown!!!");
+        break;
+    }
+}
+
+// 块设备请求
+void device_request(dev_t dev, void *buf, u8 count, index_t idx, int flags, u32 type)
+{
+    device_t *device = device_get(dev);
+    assert(device->type == DEV_BLOCK); // 设备为块设备
+
+    // 获取扇区起始位置
+    index_t offset = idx + device_ioctl(device->dev, DEV_CMD_SECTOR_START, 0, 0);
+
+    if (device->parent)
+    {
+        device = device_get(device->parent);
+    }
+
+    request_t *req = kmalloc(sizeof(request_t));
+
+    req->dev = dev;
+    req->buf = buf;
+    req->count = count;
+    req->idx = offset;
+    req->flags = flags;
+    req->type = type;
+    req->task = NULL;
+
+    // 判断列表是否为空
+    bool empty = list_empty(&device->request_list);
+
+    // 将请求圧入链表
+    list_push(&device->request_list, &req->node);
+
+    // 如果链表不为空，则阻塞
+    if (!empty)
+    {
+        req->task = running_task();
+        task_block(req->task, NULL, TASK_BLOCKED);
+    }
+
+    do_request(req);
+
+    list_remove(&req->node);
+
+    kfree(req);
+
+    if (!list_empty(&device->request_list))
+    {
+        // 先来先服务
+        request_t *nextreq = element_entry(request_t, node, device->request_list.tail.prev);
+        assert(nextreq->task->magic == YUI_MAGIC);
+        task_unblock(nextreq->task);
+    }
 }

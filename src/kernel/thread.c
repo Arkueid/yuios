@@ -47,9 +47,11 @@ void test_thread()
 {
     set_interrupt_state(true);
 
+    test();
+    DEBUG("test finished of task %d\n", getpid());
+
     while (true)
     {
-        // sleep(2000);
-        test();
+        sleep(2000);
     }
 }
