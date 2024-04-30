@@ -250,25 +250,8 @@ void task_sleep(u32 ms)
     current->ticks = jiffies + ticks; // 到期时间
 
     // 插入排序
-    list_t *list = &sleep_list;
-    list_node_t *anchor = &list->tail;
-
-    // 按 休眠结束 时刻 的 早晚 排序
-    for (list_node_t *ptr = list->head.next; ptr != &list->tail; ptr = ptr->next)
-    {
-        task_t *task = element_entry(task_t, node, ptr);
-
-        if (task->ticks > current->ticks)
-        {
-            anchor = ptr;
-            break;
-        }
-    }
-
-    assert(current->node.next == NULL);
-    assert(current->node.prev == NULL);
-
-    list_insert_before(anchor, &current->node);
+    list_insert_sort(&sleep_list, &current->node,
+                     element_node_offset(task_t, node, ticks));
 
     current->state = TASK_SLEEPING;
 
@@ -497,8 +480,8 @@ void task_exit(int status)
     task_t *parent = task_table[task->ppid];
     // 父进程状态为等待且父进程等待
     if (parent->state == TASK_WAITING &&
-            (parent->waitpid == -1 ||
-        parent->waitpid == task->pid) )
+        (parent->waitpid == -1 ||
+         parent->waitpid == task->pid))
     {
         task_unblock(parent);
     }
@@ -519,9 +502,9 @@ void task_init()
 
     idle_task = task_create(idle_thread, "idle", 1, KERNEL_USER);
     task_create(init_thread, "init", 5, NORMAL_USER);
-    task_create(test_thread, "test", 5, KERNEL_USER);
-    task_create(test_thread, "test", 5, KERNEL_USER);
-    task_create(test_thread, "test", 5, KERNEL_USER);
+    task_create(test_thread, "test", 5, 1);
+    task_create(test_thread, "test", 5, 5);
+    task_create(test_thread, "test", 5, 3);
 }
 
 pid_t sys_getpid()
