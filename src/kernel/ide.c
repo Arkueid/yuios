@@ -321,8 +321,6 @@ int ide_pio_write(ide_disk_t *disk, void *buf, u8 count, index_t lba)
             ctrl->waiter = task;
             task_block(task, NULL, TASK_BLOCKED);
         }
-
-        task_sleep(20000 / task->pid);
         ide_busy_wait(ctrl, IDE_SR_NULL);
     }
 

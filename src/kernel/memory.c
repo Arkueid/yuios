@@ -23,7 +23,7 @@
 #define PDE_MASK 0xffc00000
 
 // 内核位图数据存放位置
-#define KERNEL_MAP_BITS 0x4000
+#define KERNEL_MAP_BITS 0x6000
 
 typedef struct ards_t
 {
@@ -447,7 +447,7 @@ page_entry_t *copy_pde()
 
     page_entry_t *dentry;
 
-    for (size_t didx = 2; didx < 1023; didx++)
+    for (size_t didx = (sizeof(KERNEL_PAGE_TABLE) / 4); didx < 1023; didx++)
     {
         dentry = &pde[didx];
         if (!dentry->present)
@@ -488,7 +488,7 @@ void free_pde()
 
     page_entry_t *pde = get_pde();
 
-    for (size_t didx = 2; didx < 1023; didx++)
+    for (size_t didx = (sizeof(KERNEL_PAGE_TABLE) / 4); didx < 1023; didx++)
     {
         page_entry_t *dentry = &pde[didx];
         if (!dentry->present)
@@ -596,7 +596,7 @@ int32 sys_brk(void *addr)
     assert(task->uid != KERNEL_USER);
 
     // TODO:上界后续修改 此处有问题
-    assert(KERNEL_MEMORY_SIZE < brk || brk < USER_STACK_BOTTOM);
+    assert(KERNEL_MEMORY_SIZE <= brk && brk < USER_STACK_BOTTOM);
 
     u32 old_brk = task->brk;
 

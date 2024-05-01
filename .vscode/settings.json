@@ -36,6 +36,7 @@
         "streambuf": "c",
         "tuple": "c",
         "type_traits": "c",
-        "device.h": "c"
+        "device.h": "c",
+        "buffer.h": "c"
     }
 }
