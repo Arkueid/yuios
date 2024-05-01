@@ -24,7 +24,7 @@ static list_t hash_table[HASH_COUNT]; // 缓冲哈希表
 // 哈希函数
 u32 hash(dev_t dev, index_t block)
 {
-    return (dev ^ block) & HASH_COUNT;
+    return (dev ^ block) % HASH_COUNT;
 }
 
 static buffer_t *get_from_hash_table(dev_t dev, index_t block)
@@ -92,6 +92,7 @@ static buffer_t *get_new_buffer()
         lock_init(&bf->lock);
         buffer_count++;
         buffer_ptr++;
+        // | buffer_ptr --增长--> 空闲区域 <--增长-- buffer_data |
         buffer_data -= BLOCK_SIZE;
         DEBUG("buffer count %d\n", buffer_count);
     }

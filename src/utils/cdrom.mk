@@ -1,5 +1,3 @@
-include makefile
-
 $(BUILD)/kernel.iso: $(BUILD)/kernel.bin \
 					$(SRC)/utils/grub.cfg
 # 检测内核文件是否合法
