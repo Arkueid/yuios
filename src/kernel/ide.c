@@ -66,10 +66,10 @@
 
 typedef enum PART_FS
 {
-    PART_FS_FAT12,    // FAT12
-    PART_FS_ENTENDED, // 拓展分区
-    PART_FS_MINIX,    // minux
-    PART_FS_LINUX,    // linux
+    PART_FS_FAT12 = 1,    // FAT12
+    PART_FS_ENTENDED = 5, // 拓展分区
+    PART_FS_MINIX = 0x80,    // minux
+    PART_FS_LINUX = 0x83,    // linux
 } PART_FS;
 
 typedef struct ide_params_t
@@ -219,10 +219,10 @@ static void ide_select_sector(ide_disk_t *disk, u32 lba, u8 count)
     outb(disk->ctrl->iobase + IDE_LBA_LOW, lba & 0xff);
 
     // lba 中字节
-    outb(disk->ctrl->iobase + IDE_LBA_LOW, (lba >> 8) & 0xff);
+    outb(disk->ctrl->iobase + IDE_LBA_MID, (lba >> 8) & 0xff);
 
     // lba 高字节
-    outb(disk->ctrl->iobase + IDE_LBA_LOW, (lba >> 16) & 0xff);
+    outb(disk->ctrl->iobase + IDE_LBA_HIGH, (lba >> 16) & 0xff);
 
     // lba 最高四位 + 磁盘选择
     outb(disk->ctrl->iobase + IDE_HDDEVSEL, ((lba >> 24) & 0xf) | disk->selector);
