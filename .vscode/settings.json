@@ -37,6 +37,7 @@
         "tuple": "c",
         "type_traits": "c",
         "device.h": "c",
-        "buffer.h": "c"
+        "buffer.h": "c",
+        "fs.h": "c"
     }
 }

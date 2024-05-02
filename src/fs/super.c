@@ -5,53 +5,107 @@
 #include <yui/string.h>
 #include <yui/debug.h>
 
-void super_init()
+#define SUPER_NR 16  // 超级块数量
+
+static super_block_t super_table[SUPER_NR]; // 超级根块
+static super_block_t *root;                 // 根文件系统超级块
+
+static super_block_t *get_free_super()
 {
+    for (size_t i = 0; i < SUPER_NR; i++)
+    {
+        super_block_t *sb = &super_table[i];
+        if (sb->dev == EOF)
+        {
+            return sb;
+        }
+    }
+    panic("reached max num of super blocks!!!");
+}
+
+// 获取设备dev的超级块
+super_block_t *get_super(dev_t dev)
+{
+    for (size_t i = 0; i < SUPER_NR; i++)
+    {
+        super_block_t *sb = &super_table[i];
+        if (sb->dev == dev)
+        {
+            return sb;
+        }
+    }
+    return NULL;
+}
+
+super_block_t *read_super(dev_t dev)
+{
+    super_block_t *sb = get_super(dev);
+    if (sb)
+    {
+        return sb;
+    }
+
+    DEBUG("reading super block of device %d\n", dev);
+
+    // 获得空闲超级块
+    sb = get_free_super();
+    buffer_t *buf = bread(dev, 1);
+    sb->buf = buf;
+    sb->desc = (super_desc_t *)buf->data;
+    sb->dev = dev;
+
+    assert(sb->desc->magic == MINIX1_MAGIC);
+
+    memset(sb->imaps, 0, sizeof(sb->imaps));
+    memset(sb->zmaps, 0, sizeof(sb->zmaps));
+
+    int idx = 2; // 块位图从第 2 块开始，第 0 块引导快，第 1 块超级块
+
+    for (int i = 0; i < sb->desc->imap_blocks; i++)
+    {
+        assert(i < IMAP_NR);
+        if ((sb->imaps[i] = bread(dev, idx)))
+            idx++;
+        else
+            break;
+    }
+
+    for (int i = 0; i < sb->desc->zmap_blocks; i++)
+    {
+        assert(i < ZMAP_NR);
+        if ((sb->zmaps[i] = bread(dev, idx)))
+            idx++;
+        else
+            break;
+    }
+
+    return sb;
+}
+
+// 挂载根文件系统
+static void mount_root()
+{
+    DEBUG("Mount root file system...\n");
+
+    // 假设主硬盘第一个分区是根文件系统
     device_t *device = device_find(DEV_IDE_PART, 0);
     assert(device);
 
-    buffer_t *boot = bread(device->dev, 0);
-    buffer_t *super = bread(device->dev, 1);
+    root = read_super(device->dev);
+}
 
-    super_desc_t *sb = (super_desc_t *)super->data;
-    assert(sb->magic == MINIX1_MAGIC);
-
-    // inode 位图
-    buffer_t *imap = bread(device->dev, 2);
-
-    // 块位图
-    buffer_t *zmap = bread(device->dev, 2 + sb->imap_blocks);
-
-    // 读取第一个 inode 块
-    buffer_t *buf1 = bread(device->dev, 2 + sb->imap_blocks + sb->zmap_blocks);
-
-    inode_desc_t *inode = (inode_desc_t *)buf1->data;
-
-    buffer_t *buf2 = bread(device->dev, inode->zone[0]);
-
-    dentry_t *dir = (dentry_t *)buf2->data;
-    inode_desc_t *helloi = NULL;
-    while (dir->nr)
+void super_init()
+{
+    for (size_t i = 0; i < SUPER_NR; i++)
     {
-        DEBUG("inode %04d, name %s\n", dir->nr, dir->name);
-        if (!strcmp(dir->name, "hello.txt"))
-        {
-            helloi = &((inode_desc_t *)buf1->data)[dir->nr - 1];
-            strcpy(dir->name, "world.txt");
-            buf2->dirty = true;
-            bwrite(buf2);
-        }
-        dir++;
+        super_block_t *sb = &super_table[i];
+        sb->dev = EOF;
+        sb->desc = NULL;
+        sb->buf = NULL;
+        sb->iroot = NULL;
+        sb->imount = NULL;
+        list_init(&sb->inode_list);
     }
 
-    buffer_t *buf3 = bread(device->dev, helloi->zone[0]);
-    DEBUG("content %s", buf3->data);
-
-    strcpy(buf3->data, "this is modified content!!!\n");
-    buf3->dirty = true;
-    bwrite(buf3);
-
-    helloi->size = strlen(buf3->data);
-    buf1->dirty = true;
-    bwrite(buf1);
+    mount_root();
 }
