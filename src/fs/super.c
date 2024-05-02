@@ -5,7 +5,7 @@
 #include <yui/string.h>
 #include <yui/debug.h>
 
-#define SUPER_NR 16  // 超级块数量
+#define SUPER_NR 16 // 超级块数量
 
 static super_block_t super_table[SUPER_NR]; // 超级根块
 static super_block_t *root;                 // 根文件系统超级块
@@ -91,7 +91,12 @@ static void mount_root()
     device_t *device = device_find(DEV_IDE_PART, 0);
     assert(device);
 
-    root = read_super(device->dev);
+    super_block_t *sb = read_super(device->dev);
+    index_t idx = ialloc(sb->dev);
+    ifree(sb->dev, idx);
+
+    idx = balloc(sb->dev);
+    bfree(sb->dev, idx);
 }
 
 void super_init()
