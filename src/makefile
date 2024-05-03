@@ -68,6 +68,7 @@ $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 	$(BUILD)/kernel/arena.o \
 	$(BUILD)/kernel/ide.o \
 	$(BUILD)/kernel/buffer.o \
+	$(BUILD)/kernel/system.o \
 	$(BUILD)/lib/stdlib.o \
 	$(BUILD)/lib/string.o \
 	$(BUILD)/lib/vsprintf.o \

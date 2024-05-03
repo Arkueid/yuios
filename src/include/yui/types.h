@@ -2,9 +2,9 @@
 #define YUI_TYPES_H
 
 #define EOF -1
-#define NULL ((void *) 0)
+#define NULL ((void *)0)
 
-#define EOS '\0'  // 字符串结尾
+#define EOS '\0' // 字符串结尾
 
 #define CONCAT(X, Y) X##Y
 #define RESERVED_TOKEN(X, Y) CONCAT(X, Y)
@@ -17,11 +17,11 @@
 #endif
 
 // 用于定义特殊的结构体
-#define _packed __attribute__ ((packed)) // 用于定义特殊的结构体
+#define _packed __attribute__((packed)) // 用于定义特殊的结构体
 
-#define _inline __attribute__ ((always_inline)) inline
+#define _inline __attribute__((always_inline)) inline
 // 用于忽略函数的栈帧
-#define _ofp __attribute__ ((optimize("omit-frame-pointer")))
+#define _ofp __attribute__((optimize("omit-frame-pointer")))
 
 typedef unsigned int size_t;
 
@@ -49,5 +49,5 @@ typedef enum std_fd_t
 
 typedef int32 pid_t;
 
+typedef u16 mode_t; // 文件权限
 #endif
-

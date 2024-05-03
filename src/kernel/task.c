@@ -216,11 +216,13 @@ static task_t *task_create(target_t target, const char *name, u32 priority, u32 
     task->jiffies = 0;
     task->state = TASK_READY;
     task->uid = uid;
-    task->vmap = &kernel_bitmap; // TODO: 为什么需要使用vmap
+    task->gid = 0; // TODO
+    task->vmap = &kernel_bitmap;
     task->pde = KERNEL_PAGE_DIR;
     task->brk = KERNEL_MEMORY_SIZE; // 内核结束位置
     task->iroot = get_root_inode();
     task->ipwd = get_root_inode();
+    task->umask = 0022; // 0755
     // 如果栈顶移动到魔数的位置，或者该处魔数被修改
     // 说明栈溢出
     task->magic = YUI_MAGIC;
@@ -505,7 +507,7 @@ void task_init()
 
     idle_task = task_create(idle_thread, "idle", 1, KERNEL_USER);
     task_create(init_thread, "init", 5, NORMAL_USER);
-    task_create(test_thread, "test", 5, KERNEL_USER);
+    task_create(test_thread, "test", 5, NORMAL_USER);
 }
 
 pid_t sys_getpid()

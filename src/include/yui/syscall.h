@@ -13,6 +13,7 @@ typedef enum syscall_t
     SYS_NR_TIME,
     SYS_NR_GETPID, // 获取进程id
     SYS_NR_BRK,
+    SYS_NR_UMASK,
     SYS_NR_GETPPID, // 获取父进程id
     SYS_NR_SLEEP,
     SYS_NR_YEILD,
@@ -39,5 +40,7 @@ void exit(int status);
 pid_t waitpid(pid_t pid, int32 *status);
 
 time_t time();
+
+mode_t umask(mode_t mask);
 
 #endif

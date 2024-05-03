@@ -49,8 +49,10 @@ void test_thread()
 
     DEBUG("test finished of task %d\n", getpid());
 
+    mode_t mode = umask(0002);
+
     while (true)
     {
-        test();
+        sleep(10);
     }
 }

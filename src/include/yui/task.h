@@ -5,7 +5,7 @@
 #include <yui/list.h>
 
 #define KERNEL_USER 0
-#define NORMAL_USER 1
+#define NORMAL_USER 1000
 
 #define TASK_NAME_LEN 16
 
@@ -33,6 +33,7 @@ typedef struct task_t
     u32 jiffies;              // 上次执行时全局时间
     char name[TASK_NAME_LEN]; // 任务名称
     u32 uid;                  // 用户id
+    u32 gid;                  // 组id
     pid_t pid;                // 进程id
     pid_t ppid;               // 父进程id
     u32 pde;                  // 页目录物理地址
@@ -42,6 +43,7 @@ typedef struct task_t
     pid_t waitpid;            // 进程等待的pid
     struct inode_t *ipwd;     // 进程当前目录 inode
     struct inode_t *iroot;    // 进程根目录 indoe
+    u16 umask;                // 进程用户权限
     u32 magic;                // 内核魔术，用于检测内存溢出
 } task_t;
 

@@ -26,8 +26,7 @@ static _inline u32 _syscall2(u32 nr, u32 arg1, u32 arg2)
     asm volatile(
         "int $0x80\n"
         : "=a"(ret)
-        : "a"(nr), "b"(arg1), "c"(arg2)
-    );
+        : "a"(nr), "b"(arg1), "c"(arg2));
     return ret;
 }
 
@@ -80,7 +79,6 @@ pid_t getppid()
     return _syscall0(SYS_NR_GETPPID);
 }
 
-
 // 创建子进程
 pid_t fork()
 {
@@ -100,4 +98,9 @@ pid_t waitpid(pid_t pid, int32 *status)
 time_t time()
 {
     return _syscall0(SYS_NR_TIME);
+}
+
+mode_t umask(mode_t mask)
+{
+    return _syscall1(SYS_NR_UMASK, (u32)mask);
 }
