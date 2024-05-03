@@ -5,6 +5,68 @@
 #include <yui/string.h>
 #include <yui/assert.h>
 #include <yui/debug.h>
+#include <yui/task.h>
+
+#define P_EXEC IXOTH
+#define P_READ IROTH
+#define P_WRITE IWOTH
+
+static bool permission(inode_t *inode, u16 mask)
+{
+    u16 mode = inode->desc->mode;
+
+    if (!inode->desc->nlinks)
+        return false;
+
+    task_t *task = running_task();
+    if (task->uid == KERNEL_USER)
+        return true;
+
+    if (task->uid == inode->desc->uid)
+        mode >>= 6;
+    else if (task->gid == inode->desc->gid)
+        mode >>= 3;
+
+    if ((mode & mask & 0b111) == mask)
+        return true;
+    return false;
+}
+
+// 获取第一个分隔符
+char *strsep(const char *str)
+{
+    char *ptr = (char *)str;
+    while (true)
+    {
+        if (IS_SEPARATOR(*ptr))
+        {
+            return ptr;
+        }
+        if (*ptr++ == EOS)
+        {
+            return NULL;
+        }
+    }
+}
+
+// 获取最后一个分隔符
+char *strrsep(const char *str)
+{
+    char *last = NULL;
+    char *ptr = (char *)str;
+    while (true)
+    {
+        if (IS_SEPARATOR(*ptr))
+        {
+            last = ptr;
+        }
+
+        if (*ptr++ == EOS)
+        {
+            return last;
+        }
+    }
+}
 
 // 判断文件名是否相等
 static bool match_name(const char *name, const char *entry_name, char **next)
@@ -47,7 +109,7 @@ static buffer_t *find_entry(
     dentry_t *entry = NULL;
     index_t nr = EOF;
 
-    for (; i < entries; i ++, entry++)
+    for (; i < entries; i++, entry++)
     {
         // buf 未初始化或当前 entry 超出 buf 所在块
         // 则更新 buf
@@ -85,7 +147,7 @@ static buffer_t *add_enrtry(inode_t *dir, const char *name, dentry_t **result)
     }
 
     // name 中不能有分隔符
-    for (size_t i = 0; i < NAME_LEN && name[i]; i ++)
+    for (size_t i = 0; i < NAME_LEN && name[i]; i++)
     {
         assert(!IS_SEPARATOR(name[i]));
     }
@@ -94,7 +156,7 @@ static buffer_t *add_enrtry(inode_t *dir, const char *name, dentry_t **result)
     index_t block = 0;
     dentry_t *entry;
 
-    for (; true; i ++, entry++)
+    for (; true; i++, entry++)
     {
         if (!buf || (u32)entry >= (u32)buf->data + BLOCK_SIZE)
         {
@@ -115,7 +177,7 @@ static buffer_t *add_enrtry(inode_t *dir, const char *name, dentry_t **result)
 
         if (entry->nr)
             continue;
-        
+
         strncpy(entry->name, name, NAME_LEN);
         buf->dirty = true;
         dir->desc->mtime = time();
@@ -125,28 +187,104 @@ static buffer_t *add_enrtry(inode_t *dir, const char *name, dentry_t **result)
     }
 }
 
+// 获取 pathname 对应的父目录的 inode
+inode_t *named(char *pathname, char **next)
+{
+    inode_t *inode = NULL;
+    task_t *task = running_task();
+    char *left = pathname;
+    if (IS_SEPARATOR(left[0]))
+    {
+        inode = task->iroot;
+        left++;
+    }
+    else if (left[0])
+        inode = task->ipwd;
+    else
+        return NULL;
+
+    inode->count++;
+    *next = left;
+
+    if (!*left)
+    {
+        return inode;
+    }
+
+    char *right = strrsep(left);
+    if (!right || right < left)
+    {
+        return inode;
+    }
+
+    right++;
+
+    *next = left;
+    dentry_t *entry = NULL;
+    buffer_t *buf = NULL;
+    while (true)
+    {
+        buf = find_entry(&inode, left, next, &entry);
+        if (!buf)
+            goto failure;
+
+        dev_t dev = inode->dev;
+        iput(inode);
+        inode = iget(dev, entry->nr);
+        if (!ISDIR(inode->desc->mode) || !permission(inode, P_EXEC))
+            goto failure;
+
+        if (right == *next)
+            goto success;
+
+        left = *next;
+    }
+
+success:
+    brelse(buf);
+    return inode;
+failure:
+    brelse(buf);
+    iput(inode);
+    return NULL;
+}
+
+inode_t *namei(char *pathname)
+{
+    char *next = NULL;
+    inode_t *dir = named(pathname, &next);
+    if (!dir)
+        return NULL;
+    if (!(*next))
+        return dir;
+
+    char *name = next;
+    dentry_t *entry = NULL;
+    buffer_t *buf = find_entry(&dir, name, &next, &entry);
+    
+    if (!buf)
+    {
+        iput(dir);
+        return NULL;
+    }
+
+    inode_t *inode = iget(dir->dev, entry->nr);
+
+    iput(dir);
+    brelse(buf);
+    return inode;
+}
+
 #include <yui/task.h>
 
 void dir_test()
 {
-    task_t *task = running_task();
-    inode_t *inode = task->iroot;
-    inode->count ++;
-    char *next = NULL;
-    dentry_t *entry = NULL;
-    buffer_t *buf = NULL;
-
-    buf = find_entry(&inode, "hello.txt", &next, &entry);
-    index_t nr = entry->nr;
-    brelse(buf);
-
-    buf = add_enrtry(inode, "world.txt", &entry);
-    entry->nr = nr;
-    inode_t *hello = iget(inode->dev, nr);
-    hello->desc->nlinks++;
-    hello->buf->dirty = true;
-
+    char pathname[] = "/";
+    char *name = NULL;
+    inode_t *inode = named(pathname, &name);
     iput(inode);
-    iput(hello);
-    brelse(buf);
+
+    inode = namei("/home/hello.txt");
+    DEBUG("get inode %d\n", inode->nr);
+    iput(inode);
 }

@@ -100,4 +100,8 @@ inode_t *iget(dev_t dev, index_t nr); // 获得设备 dev 的 nr inode
 
 void iput(inode_t *inode);  // 释放 inode
 
+inode_t *named(char *pathname, char **next);
+
+inode_t *namei(char *pathname);
+
 #endif
