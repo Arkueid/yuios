@@ -58,11 +58,6 @@ void sleep(u32 ms)
     _syscall1(SYS_NR_SLEEP, ms);
 }
 
-int32 write(fd_t fd, char *buf, u32 len)
-{
-    return _syscall3(SYS_NR_WRITE, fd, (u32)buf, len);
-}
-
 // 系统调用-brk
 int32 brk(void *vaddr)
 {
@@ -138,4 +133,14 @@ fd_t creat(char *filename, int mode)
 void close(fd_t fd)
 {
     _syscall1(SYS_NR_CLOSE, (u32)fd);
+}
+
+int read(fd_t fd, char *buf, int len)
+{
+    return _syscall3(SYS_NR_READ, fd, (u32)buf, len);
+}
+
+int write(fd_t fd, char *buf, int len)
+{
+    return _syscall3(SYS_NR_WRITE, fd, (u32)buf, len);
 }

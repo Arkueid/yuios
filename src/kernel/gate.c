@@ -34,32 +34,8 @@ static void sys_default()
 // 系统调用-test
 static u32 sys_test()
 {
-    char ch;
-    device_t *device;
-
-    device = device_find(DEV_KEYBOARD, 0);
-    assert(device);
-
-    device_read(device->dev, &ch, 1, 0, 0);
-
-    device = device_find(DEV_CONSOLE, 0);
-    assert(device);
-    device_write(device->dev, &ch, 1, 0, 0);
 
     return 255;
-}
-
-extern int32 console_write();
-
-int32 sys_write(fd_t fd, char *buf, u32 len)
-{
-    if (fd == stdout || fd == stderr)
-    {
-        return console_write(NULL, buf, len);
-    }
-    // TODO: write
-    panic("write error: unknown fd %d!!!", fd);
-    return 0;
 }
 
 extern time_t sys_time();
@@ -75,6 +51,9 @@ extern fd_t sys_open();
 extern fd_t sys_creat();
 extern void sys_close();
 
+extern int sys_read();
+extern int sys_write();
+
 void syscall_init()
 {
     for (size_t i = 0; i < SYSCALL_SIZE; i++)
@@ -87,6 +66,8 @@ void syscall_init()
     syscall_table[SYS_NR_EXIT] = task_exit;
 
     syscall_table[SYS_NR_FORK] = task_fork;
+
+    syscall_table[SYS_NR_READ] = sys_read;
 
     syscall_table[SYS_NR_WAITPID] = task_waitpid;
 
