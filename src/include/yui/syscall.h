@@ -16,15 +16,19 @@ typedef enum syscall_t
     SYS_NR_CREAT,
     SYS_NR_LINK,
     SYS_NR_UNLINK,
+    SYS_NR_CHDIR,
     SYS_NR_TIME,
+    SYS_NR_LSEEK,
     SYS_NR_GETPID, // 获取进程id
     SYS_NR_MKDIR,
     SYS_NR_RMDIR,
     SYS_NR_BRK,
     SYS_NR_UMASK,
+    SYS_NR_CHROOT,
     SYS_NR_GETPPID, // 获取父进程id
     SYS_NR_SLEEP,
     SYS_NR_YEILD,
+    SYS_NR_GETCWD,
 } syscall_t;
 
 u32 test();
@@ -75,5 +79,17 @@ int read(fd_t fd, char *buf, int len);
 
 // 写文件
 int write(fd_t fd, char *buf, int len);
+
+// 设置文件偏移量
+int lseek(fd_t fd, off_t offset, int whence);
+
+// 获取当前路径
+char *getcwd(char *buf, size_t size);
+
+// 切换当前目录
+int chdir(char *pathname);
+
+// 切换根目录
+int chroot(char *pathname);
 
 #endif

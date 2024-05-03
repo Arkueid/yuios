@@ -243,8 +243,12 @@ static task_t *task_create(target_t target, const char *name, u32 priority, u32 
     task->vmap = &kernel_bitmap;
     task->pde = KERNEL_PAGE_DIR;
     task->brk = KERNEL_MEMORY_SIZE; // 内核结束位置
-    task->iroot = get_root_inode();
-    task->ipwd = get_root_inode();
+    task->iroot = task->ipwd = get_root_inode();
+    task->iroot->count += 2;
+
+    task->pwd = (void *)alloc_kpage(1);
+    strcpy(task->pwd, "/");
+
     task->umask = 0022; // 0755
     // 如果栈顶移动到魔数的位置，或者该处魔数被修改
     // 说明栈溢出
@@ -363,6 +367,22 @@ pid_t task_fork()
 
     // 页目录
     child->pde = (u32)copy_pde();
+
+    // 拷贝 pwd
+    child->pwd = (char *)alloc_kpage(1);
+    strncpy(child->pwd, task->pwd, PAGE_SIZE);
+
+    // 工作目录引用加一
+    task->ipwd->count++;
+    task->iroot->count++;
+
+    // 文件引用加一
+    for (size_t i = 0; i < TASK_FILE_NR; i++)
+    {
+        file_t *file = child->files[i];
+        if (file)
+            file->count++;
+    }
 
     task_build_stack(child);
 
@@ -489,6 +509,19 @@ void task_exit(int status)
 
     free_kpage((u32)task->vmap->bits, 1);
     kfree(task->vmap);
+
+    free_kpage((u32)task->pwd, 1);
+    iput(task->ipwd);
+    iput(task->iroot);
+
+    for (size_t i = 0; i < TASK_FILE_NR; i++)
+    {
+        file_t *file = task->files[i];
+        if (file)
+        {
+            close(i);
+        }
+    }
 
     for (size_t i = 0; i < NR_TASKS; i++)
     {

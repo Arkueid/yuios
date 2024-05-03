@@ -7,6 +7,7 @@
 #include <yui/stdio.h>
 #include <yui/arena.h>
 #include <yui/fs.h>
+#include <yui/string.h>
 
 void idle_thread()
 {
@@ -33,17 +34,11 @@ static void user_init_thread()
 {
 
     char buf[256];
-    fd_t fd;
-    int len = 0;
-    fd = open("/hello.txt", O_RDWR, 0755);
-    len = read(fd, buf, sizeof(buf));
-    printf("hello.txt content: %s length: %d\n", buf, len);
-    close(fd);
+    chroot("/d1");
+    chdir("/d2");
+    getcwd(buf, sizeof(buf));
+    printf("current work directory: %s\n", buf);
 
-    fd = open("/world.txt", O_CREAT | O_RDWR, 0755);
-    len = write(fd, buf, len);
-    close(fd);
-    
     while (true)
     {
         // printf("user thread %d\n", time());
