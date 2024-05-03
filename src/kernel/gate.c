@@ -33,6 +33,9 @@ static void sys_default()
 // 系统调用-test
 static u32 sys_test()
 {
+    extern void dir_test();
+    dir_test();
+
     char ch;
     device_t *device;
 
