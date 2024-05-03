@@ -78,6 +78,7 @@ $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 	$(BUILD)/lib/printf.o  \
 	$(BUILD)/fs/super.o  \
 	$(BUILD)/fs/bmap.o  \
+	$(BUILD)/fs/inode.o  \
 
 	$(shell mkdir -p $(dir $@))
 	ld $(LDFLAGS) $^ -o $@

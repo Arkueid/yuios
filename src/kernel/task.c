@@ -11,6 +11,7 @@
 #include <yui/syscall.h>
 #include <yui/global.h>
 #include <yui/arena.h>
+#include <yui/fs.h>
 
 extern bitmap_t kernel_bitmap;
 extern void task_switch(task_t *next);
@@ -218,6 +219,8 @@ static task_t *task_create(target_t target, const char *name, u32 priority, u32 
     task->vmap = &kernel_bitmap; // TODO: 为什么需要使用vmap
     task->pde = KERNEL_PAGE_DIR;
     task->brk = KERNEL_MEMORY_SIZE; // 内核结束位置
+    task->iroot = get_root_inode();
+    task->ipwd = get_root_inode();
     // 如果栈顶移动到魔数的位置，或者该处魔数被修改
     // 说明栈溢出
     task->magic = YUI_MAGIC;

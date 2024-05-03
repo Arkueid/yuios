@@ -29,7 +29,7 @@ typedef struct task_t
     list_node_t node;         // 任务阻塞节点
     task_state_t state;       // 程序状态
     u32 priority;             // 优先级
-    int32 ticks;                // 剩余执行时间
+    int32 ticks;              // 剩余执行时间
     u32 jiffies;              // 上次执行时全局时间
     char name[TASK_NAME_LEN]; // 任务名称
     u32 uid;                  // 用户id
@@ -40,6 +40,8 @@ typedef struct task_t
     u32 brk;                  // 进程堆区内存最高地址
     int status;               // 进程特殊状态
     pid_t waitpid;            // 进程等待的pid
+    struct inode_t *ipwd;     // 进程当前目录 inode
+    struct inode_t *iroot;    // 进程根目录 indoe
     u32 magic;                // 内核魔术，用于检测内存溢出
 } task_t;
 
