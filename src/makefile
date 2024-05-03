@@ -81,6 +81,7 @@ $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 	$(BUILD)/fs/bmap.o  \
 	$(BUILD)/fs/inode.o  \
 	$(BUILD)/fs/namei.o  \
+	$(BUILD)/fs/file.o  \
 
 	$(shell mkdir -p $(dir $@))
 	ld $(LDFLAGS) $^ -o $@

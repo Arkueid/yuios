@@ -9,6 +9,8 @@
 
 #define TASK_NAME_LEN 16
 
+#define TASK_FILE_NR 16
+
 // 入口地址
 typedef void target_t();
 
@@ -25,26 +27,27 @@ typedef enum task_state_t
 
 typedef struct task_t
 {
-    u32 *stack;               // 内存栈，栈顶
-    list_node_t node;         // 任务阻塞节点
-    task_state_t state;       // 程序状态
-    u32 priority;             // 优先级
-    int32 ticks;              // 剩余执行时间
-    u32 jiffies;              // 上次执行时全局时间
-    char name[TASK_NAME_LEN]; // 任务名称
-    u32 uid;                  // 用户id
-    u32 gid;                  // 组id
-    pid_t pid;                // 进程id
-    pid_t ppid;               // 父进程id
-    u32 pde;                  // 页目录物理地址
-    struct bitmap_t *vmap;    // 进程虚拟内存位图
-    u32 brk;                  // 进程堆区内存最高地址
-    int status;               // 进程特殊状态
-    pid_t waitpid;            // 进程等待的pid
-    struct inode_t *ipwd;     // 进程当前目录 inode
-    struct inode_t *iroot;    // 进程根目录 indoe
-    u16 umask;                // 进程用户权限
-    u32 magic;                // 内核魔术，用于检测内存溢出
+    u32 *stack;                         // 内核栈
+    list_node_t node;                   // 任务阻塞节点
+    task_state_t state;                 // 任务状态
+    u32 priority;                       // 任务优先级
+    int ticks;                          // 剩余时间片
+    u32 jiffies;                        // 上次执行时全局时间片
+    char name[TASK_NAME_LEN];           // 任务名
+    u32 uid;                            // 用户 id
+    u32 gid;                            // 用户组 id
+    pid_t pid;                          // 任务 id
+    pid_t ppid;                         // 父任务 id
+    u32 pde;                            // 页目录物理地址
+    struct bitmap_t *vmap;              // 进程虚拟内存位图
+    u32 brk;                            // 进程堆内存最高地址
+    int status;                         // 进程特殊状态
+    pid_t waitpid;                      // 进程等待的 pid
+    struct inode_t *ipwd;               // 进程当前目录 inode program work directory
+    struct inode_t *iroot;              // 进程根目录 inode
+    u16 umask;                          // 进程用户权限
+    struct file_t *files[TASK_FILE_NR]; // 进程文件表
+    u32 magic;                          // 内核魔数，用于
 } task_t;
 
 // 任务栈帧
@@ -119,5 +122,9 @@ void task_exit(int status);
 pid_t task_waitpid(pid_t pid, int32 *status);
 
 void task_to_user_mode(target_t target);
+
+fd_t task_get_fd(task_t *task);
+
+void task_put_fd(task_t *task, fd_t fd);
 
 #endif

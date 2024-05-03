@@ -132,7 +132,7 @@ buffer_t *getblk(dev_t dev, index_t block)
     buffer_t *bf = get_from_hash_table(dev, block);
     if (bf)
     {
-        assert(bf->valid);
+        bf->count++;
         return bf;
     }
 
@@ -156,14 +156,18 @@ buffer_t *bread(dev_t dev, index_t block)
     assert(bf != NULL);
     if (bf->valid)
     {
-        bf->count++;
         return bf;
     }
 
-    device_request(bf->dev, bf->data, BLOCK_SECS, bf->block * BLOCK_SECS, 0, REQ_READ);
+    lock_accquire(&bf->lock);
 
-    bf->dirty = false;
-    bf->valid = true;
+    if (!bf->valid)
+    {
+        device_request(bf->dev, bf->data, BLOCK_SECS, bf->block * BLOCK_SECS, 0, REQ_READ);
+        bf->dirty = false;
+        bf->valid = true;
+    }
+    lock_release(&bf->lock);
     return bf;
 }
 
@@ -194,11 +198,10 @@ void brelse(buffer_t *bf)
     assert(bf->count >= 0);
     if (bf->count)
         return;
-    
+
     assert(!bf->rnode.next);
     assert(!bf->rnode.prev);
     list_push(&free_list, &bf->rnode);
-    
 
     if (!list_empty(&wait_list))
     {

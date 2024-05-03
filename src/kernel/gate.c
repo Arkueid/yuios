@@ -8,6 +8,7 @@
 #include <yui/device.h>
 #include <yui/string.h>
 #include <yui/buffer.h>
+#include <yui/fs.h>
 
 #define SYSCALL_SIZE 256
 
@@ -33,9 +34,6 @@ static void sys_default()
 // 系统调用-test
 static u32 sys_test()
 {
-    extern void dir_test();
-    dir_test();
-
     char ch;
     device_t *device;
 
@@ -67,6 +65,16 @@ int32 sys_write(fd_t fd, char *buf, u32 len)
 extern time_t sys_time();
 extern mode_t sys_umask();
 
+extern int sys_mkdir();
+extern int sys_rmdir();
+
+extern int sys_link();
+extern int sys_unlink();
+
+extern fd_t sys_open();
+extern fd_t sys_creat();
+extern void sys_close();
+
 void syscall_init()
 {
     for (size_t i = 0; i < SYSCALL_SIZE; i++)
@@ -82,6 +90,10 @@ void syscall_init()
 
     syscall_table[SYS_NR_WAITPID] = task_waitpid;
 
+    syscall_table[SYS_NR_LINK] = sys_link;
+
+    syscall_table[SYS_NR_UNLINK] = sys_unlink;
+
     syscall_table[SYS_NR_TIME] = sys_time;
 
     syscall_table[SYS_NR_WRITE] = sys_write;
@@ -89,6 +101,14 @@ void syscall_init()
     syscall_table[SYS_NR_UMASK] = sys_umask;
 
     syscall_table[SYS_NR_GETPID] = sys_getpid;
+
+    syscall_table[SYS_NR_MKDIR] = sys_mkdir;
+    syscall_table[SYS_NR_RMDIR] = sys_rmdir;
+
+    syscall_table[SYS_NR_OPEN] = sys_open;
+    syscall_table[SYS_NR_CREAT] = sys_creat;
+    syscall_table[SYS_NR_CLOSE] = sys_close;
+
     syscall_table[SYS_NR_BRK] = sys_brk;
     syscall_table[SYS_NR_GETPPID] = sys_getppid;
 

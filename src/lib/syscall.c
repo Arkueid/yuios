@@ -104,3 +104,38 @@ mode_t umask(mode_t mask)
 {
     return _syscall1(SYS_NR_UMASK, (u32)mask);
 }
+
+int mkdir(char *pathname, int mode)
+{
+    return _syscall2(SYS_NR_MKDIR, (u32)pathname, (u32)mode);
+}
+
+int rmdir(char *pathname)
+{
+    return _syscall1(SYS_NR_RMDIR, (u32)pathname);
+}
+
+int link(char *oldname, char *newname)
+{
+    return _syscall2(SYS_NR_LINK, (u32)oldname, (u32)newname);
+}
+
+int unlink(char *filename)
+{
+    return _syscall1(SYS_NR_UNLINK, (u32)filename);
+}
+
+fd_t open(char *filename, int flags, int mode)
+{
+    return _syscall3(SYS_NR_OPEN, (u32)filename, (u32)flags, (u32)mode);
+}
+
+fd_t creat(char *filename, int mode)
+{
+    return _syscall2(SYS_NR_CREAT, (u32)filename, (u32)mode);
+}
+
+void close(fd_t fd)
+{
+    _syscall1(SYS_NR_CLOSE, (u32)fd);
+}

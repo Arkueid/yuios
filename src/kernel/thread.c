@@ -6,6 +6,7 @@
 #include <yui/task.h>
 #include <yui/stdio.h>
 #include <yui/arena.h>
+#include <yui/fs.h>
 
 void idle_thread()
 {
@@ -30,6 +31,10 @@ extern void hang();
 
 static void user_init_thread()
 {
+
+    fd_t fd = open("/world.txt", O_CREAT | O_RDWR, 0755);
+    close(fd);
+    
     while (true)
     {
         // printf("user thread %d\n", time());
