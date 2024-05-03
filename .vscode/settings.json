@@ -38,6 +38,7 @@
         "type_traits": "c",
         "device.h": "c",
         "buffer.h": "c",
-        "fs.h": "c"
+        "fs.h": "c",
+        "arena.h": "c"
     }
 }

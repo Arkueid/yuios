@@ -10,7 +10,7 @@
 #define IFDIR 0040000 // 目录文件
 #define IFCHR 0020000 // 字符设备文件
 #define IFIFO 0010000 // FIFO 特殊文件
-#define IFSYM 0120000 // 符号链接
+#define IFLINK 0120000 // 符号链接
 
 // 文件属性
 #define ISUID 0004000 // 执行时设置用户 id
@@ -24,7 +24,9 @@
 #define ISBLK(m) (((m) & IFMT) == IFBLK)  // 是块设备文件
 #define ISFIFO(m) (((m) & IFMT) == IFIFO) // 是 FIFO 特殊文件
 
-#define ISSYM(m) (((m) & IFMT) == IFSYM) // 是符号链接
+#define ISLINK(m) (((m) & IFMT) == IFLINK) // 是符号链接
+
+#define ISFILE(m) ISREG(m)
 
 // 宿主权限
 #define IRWXU 00700 // 宿主可以读、写、执行/搜索

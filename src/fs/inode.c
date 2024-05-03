@@ -6,6 +6,7 @@
 #include <yui/arena.h>
 #include <yui/string.h>
 #include <yui/stdlib.h>
+#include <yui/stat.h>
 
 #define INODE_NR 64
 
@@ -130,6 +131,121 @@ void iput(inode_t *inode)
 
     // 释放 inode 内存
     put_free_inode(inode);
+}
+
+int inode_read(inode_t *inode, char *buf, u32 len, off_t offset)
+{
+    assert(ISFILE(inode->desc->mode) || ISDIR(inode->desc->mode));
+
+    // 如果偏移量超过文件大小，返回 EOF
+    if (offset >= inode->desc->size)
+    {
+        return EOF;
+    }
+
+    // 开始读取的位置
+    u32 begin = offset;
+
+    // 剩余字节数
+    u32 left = MIN(len, inode->desc->size - offset);
+    while (left)
+    {
+        // 找到对应文件的偏移，文件所在块
+        index_t nr = bmap(inode, offset / BLOCK_SIZE, false);
+
+        assert(nr);
+
+        // 读取文件缓冲
+        buffer_t *bf = bread(inode->dev, nr);
+
+        // 文件块中的偏移量
+        u32 start = offset % BLOCK_SIZE;
+
+        // 本次需要读取的字节数
+        u32 chars = MIN(BLOCK_SIZE - start, left);
+
+        offset += chars;
+        left -= chars;
+
+        // 文件块中的指针
+        char *ptr = bf->data + start;
+
+        // 拷贝内容
+        memcpy(buf, ptr, chars);
+
+        // 更新缓冲位置
+        buf += chars;
+
+        // 释放文件缓冲块
+        brelse(bf);
+    }
+
+    // 更新访问时间
+    inode->atime = time();
+
+    // 返回读取数量
+    return offset - begin;
+}
+
+// 从 inode 的 offset 处，将 buf 的 len 个字节写入磁盘
+int inode_write(inode_t *inode, char *buf, u32 len, off_t offset)
+{
+    // 不允许目录写入目录文件
+    assert(ISFILE(inode->desc->mode));
+
+    // 开始位置
+    u32 begin = offset;
+
+    // 剩余数量
+    u32 left = len;
+
+    while (left)
+    {
+        // 找到文件块，不存在则创建
+        index_t nr = bmap(inode, offset / BLOCK_SIZE, true);
+
+        assert(nr);
+
+        // 读入文件块
+        buffer_t *bf = bread(inode->dev, nr);
+        bf->dirty = true;
+
+        // 块中的偏移量
+        u32 start = offset % BLOCK_SIZE;
+        // 文件中的指针
+        char *ptr = bf->data + start;
+
+        // 读取的数量
+        u32 chars = MIN(BLOCK_SIZE - start, left);
+
+        // 更新偏移量
+        offset += chars;
+
+        left -= chars;
+
+        // 如果偏移量大于文件大小，则更新文件大小
+        if (offset > inode->desc->size)
+        {
+            inode->desc->size = offset;
+            inode->buf->dirty = true;
+        }
+
+        // 拷贝内容
+        memcpy(ptr, buf, chars);
+
+        // 更新缓冲偏移
+        buf += chars;
+
+        // 释放文件块
+        brelse(bf);
+    }
+
+    // 修改更新时间
+    inode->desc->mtime = inode->atime = time();
+
+    bwrite(inode->buf);
+
+    return offset - begin;
 }
 
 void inode_init()

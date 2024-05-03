@@ -261,7 +261,7 @@ inode_t *namei(char *pathname)
     char *name = next;
     dentry_t *entry = NULL;
     buffer_t *buf = find_entry(&dir, name, &next, &entry);
-    
+
     if (!buf)
     {
         iput(dir);
@@ -275,16 +275,19 @@ inode_t *namei(char *pathname)
     return inode;
 }
 
-#include <yui/task.h>
+#include <yui/memory.h>
 
 void dir_test()
 {
-    char pathname[] = "/";
-    char *name = NULL;
-    inode_t *inode = named(pathname, &name);
-    iput(inode);
+    inode_t *inode = namei("/d1/d2/d3/../../../hello.txt");
 
-    inode = namei("/home/hello.txt");
-    DEBUG("get inode %d\n", inode->nr);
-    iput(inode);
+    char *buf = (char *)alloc_kpage(1);
+    inode_read(inode, buf, 30, 0);
+    DEBUG("%s\n", buf);
+
+    memset(buf, 'A', PAGE_SIZE);
+    inode_write(inode, buf, PAGE_SIZE, 0);
+
+    memset(buf, 'B', PAGE_SIZE);
+    inode_write(inode, buf, PAGE_SIZE, PAGE_SIZE);
 }
