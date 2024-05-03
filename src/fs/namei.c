@@ -281,13 +281,6 @@ void dir_test()
 {
     inode_t *inode = namei("/d1/d2/d3/../../../hello.txt");
 
-    char *buf = (char *)alloc_kpage(1);
-    inode_read(inode, buf, 30, 0);
-    DEBUG("%s\n", buf);
-
-    memset(buf, 'A', PAGE_SIZE);
-    inode_write(inode, buf, PAGE_SIZE, 0);
-
-    memset(buf, 'B', PAGE_SIZE);
-    inode_write(inode, buf, PAGE_SIZE, PAGE_SIZE);
+    inode_truncate(inode);
+    iput(inode);
 }

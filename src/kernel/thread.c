@@ -49,10 +49,9 @@ void test_thread()
 
     DEBUG("test finished of task %d\n", getpid());
 
-    test();
-    
     while (true)
     {
+        test();
         sleep(10);
     }
 }
