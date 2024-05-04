@@ -32,9 +32,12 @@ typedef enum syscall_t
     SYS_NR_MUNMAP,
     SYS_NR_MKDIR,
     SYS_NR_RMDIR,
+    SYS_NR_DUP,
+    SYS_NR_PIPE,
     SYS_NR_BRK,
     SYS_NR_UMASK,
     SYS_NR_CHROOT,
+    SYS_NR_DUP2,
     SYS_NR_GETPPID, // 获取父进程id
     SYS_NR_SLEEP,
     SYS_NR_YEILD,
@@ -145,5 +148,13 @@ int munmap(void *addr, size_t length);
 
 // 执行程序
 int execve(char *filename, char *argv[], char *envp[]);
+
+// 复制文件描述符
+fd_t dup(fd_t oldfd);
+
+fd_t dup2(fd_t oldfd, fd_t newfd);
+
+// 创建管道
+int pipe(fd_t pipefd[2]);
 
 #endif

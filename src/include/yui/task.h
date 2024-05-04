@@ -127,7 +127,7 @@ void task_exit(int status);
 
 pid_t task_waitpid(pid_t pid, int32 *status);
 
-void task_to_user_mode(target_t target);
+void task_to_user_mode();
 
 fd_t task_get_fd(task_t *task);
 

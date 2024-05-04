@@ -32,42 +32,6 @@ bool permission(inode_t *inode, u16 mask)
     return false;
 }
 
-// 获取第一个分隔符
-char *strsep(const char *str)
-{
-    char *ptr = (char *)str;
-    while (true)
-    {
-        if (IS_SEPARATOR(*ptr))
-        {
-            return ptr;
-        }
-        if (*ptr++ == EOS)
-        {
-            return NULL;
-        }
-    }
-}
-
-// 获取最后一个分隔符
-char *strrsep(const char *str)
-{
-    char *last = NULL;
-    char *ptr = (char *)str;
-    while (true)
-    {
-        if (IS_SEPARATOR(*ptr))
-        {
-            last = ptr;
-        }
-
-        if (*ptr++ == EOS)
-        {
-            return last;
-        }
-    }
-}
-
 // 判断文件名是否相等
 static bool match_name(const char *name, const char *entry_name, char **next)
 {
@@ -133,7 +97,7 @@ static buffer_t *find_entry(
             entry = (dentry_t *)buf->data;
         }
 
-        if (match_name(name, entry->name, next))
+        if (match_name(name, entry->name, next)  && entry->nr)
         {
             *result = entry;
             return buf;
@@ -618,7 +582,7 @@ inode_t *inode_open(char *pathname, int flag, int mode)
     inode->desc->mode = mode;
 
 makeup:
-    if (!permission(inode, flag & O_ACCMODE))
+    if (!permission(inode, ACC_MODE(flag & O_ACCMODE)))
         goto rollback;
 
     if (ISDIR(inode->desc->mode) && ((flag & O_ACCMODE) != O_RDONLY))

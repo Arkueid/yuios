@@ -42,6 +42,8 @@
         "arena.h": "c",
         "list.h": "c",
         "stat.h": "c",
-        "fstream": "c"
+        "fstream": "c",
+        "condition_variable": "c",
+        "mutex": "c"
     }
 }

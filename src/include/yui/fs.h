@@ -48,6 +48,9 @@ typedef struct inode_t
     time_t ctime;         // 创建时间
     list_node_t node;     // 链表节点
     dev_t mount;          // 挂载设备
+    struct task_t *rxwaiter; // 读等待进程
+    struct task_t *txwaiter; // 写等待进程
+    bool pipe;               // 管道标志
 } inode_t;
 
 typedef struct super_desc_t
@@ -162,5 +165,13 @@ int devmkfs(dev_t dev, u32 icount);
 
 // 检查权限
 bool permission(inode_t *inode, u16 mask);
+
+#define ACC_MODE(x) ("\004\002\006\377"[(x) & O_ACCMODE])
+
+inode_t *get_pipe_inode(); // 获取管道 inode
+// 管道读
+int pipe_read(inode_t *inode, char *buf, int count);
+// 管道写
+int pipe_write(inode_t *inode, char *buf, int count);
 
 #endif

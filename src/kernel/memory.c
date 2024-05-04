@@ -10,6 +10,7 @@
 #include <yui/task.h>
 #include <yui/syscall.h>
 #include <yui/fs.h>
+#include <yui/printk.h>
 
 #define ZONE_VALID 1    // ards 可用区域
 #define ZONE_RESERVED 2 // ards 不可用区域
@@ -247,6 +248,8 @@ void mapping_init()
         page_entry_t *dentry = &pde[didx];
         entry_init(dentry, IDX((u32)pte));
 
+        dentry->user = 0; // 只能被内核访问
+
         for (size_t tidx = 0; tidx < 1024; tidx++, index++)
         {
             // 第0页不映射，用于空指针实现、缺页等的实现
@@ -255,6 +258,7 @@ void mapping_init()
 
             page_entry_t *tentry = &pte[tidx];
             entry_init(tentry, index);
+            tentry->user = 0; // 只能被内核访问
             memory_map[index] = 1;
         }
     }
@@ -618,7 +622,13 @@ void page_fault(
     page_error_code_t *code = (page_error_code_t *)&error;
     task_t *task = running_task();
 
-    assert(KERNEL_MEMORY_SIZE <= vaddr && vaddr < USER_STACK_TOP);
+    // 如果用户程序访问了不该访问的内存
+    if (vaddr < USER_EXEC_ADDR || vaddr >= USER_STACK_TOP)
+    {
+        assert(task->uid);
+        printk("Segmentation Fault!!!\n");
+        task_exit(-1);
+    }
 
     if (code->present)
     {
@@ -657,6 +667,7 @@ void page_fault(
         return;
     }
 
+    DEBUG("task 0x%p name %s brk 0x%p page fault\n", task, task->name, task->brk);
     panic("page fault!!!");
 }
 
@@ -676,7 +687,7 @@ int32 sys_brk(void *addr)
 
     if (old_brk > brk)
     {
-        for (u32 page = brk; brk < old_brk; page += PAGE_SIZE)
+        for (u32 page = brk; page < old_brk; page += PAGE_SIZE)
         {
             unlink_page(page);
         }

@@ -80,7 +80,6 @@ $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 	$(BUILD)/lib/syscall.o \
 	$(BUILD)/lib/list.o  \
 	$(BUILD)/lib/fifo.o  \
-	$(BUILD)/lib/printf.o  \
 	$(BUILD)/fs/super.o  \
 	$(BUILD)/fs/bmap.o  \
 	$(BUILD)/fs/inode.o  \
@@ -88,7 +87,7 @@ $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 	$(BUILD)/fs/file.o  \
 	$(BUILD)/fs/stat.o  \
 	$(BUILD)/fs/dev.o  \
-	$(BUILD)/builtin/osh.o  \
+	$(BUILD)/fs/pipe.o \
 
 	$(shell mkdir -p $(dir $@))
 	ld $(LDFLAGS) $^ -o $@
@@ -114,10 +113,14 @@ $(BUILD)/lib/libc.o: $(BUILD)/lib/crt.o \
 	ld -m elf_i386 -r $^ -o $@
 
 BUILTIN_APPS := \
+	$(BUILD)/builtin/init.out \
+	$(BUILD)/builtin/osh.out  \
 	$(BUILD)/builtin/env.out \
 	$(BUILD)/builtin/echo.out \
 	$(BUILD)/builtin/cat.out \
 	$(BUILD)/builtin/ls.out \
+	$(BUILD)/builtin/dup.out \
+	$(BUILD)/builtin/err.out \
 
 $(BUILD)/builtin/%.out: $(BUILD)/builtin/%.o \
 	$(BUILD)/lib/libc.o \

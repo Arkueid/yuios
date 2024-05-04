@@ -69,8 +69,6 @@ fd_t task_get_fd(task_t *task)
 
 void task_put_fd(task_t *task, fd_t fd)
 {
-    if (fd < 3)
-        return;
     assert(fd < TASK_FILE_NR);
     task->files[fd] = NULL;
 }
@@ -459,7 +457,9 @@ rollback:
     return ret;
 }
 
-void task_to_user_mode(target_t target)
+extern int sys_execve();
+
+void task_to_user_mode()
 {
     task_t *task = running_task();
 
@@ -501,13 +501,12 @@ void task_to_user_mode(target_t target)
 
     iframe->error = YUI_MAGIC;
 
-    iframe->eip = (u32)target;
+    iframe->eip = 0;
     iframe->eflags = (0 << 12 | 0b10 | 1 << 9);
     iframe->esp = USER_STACK_TOP; // 返回地址
 
-    asm volatile(
-        "movl %0, %%esp\n"
-        "jmp interrupt_exit\n" ::"m"(iframe));
+    int err = sys_execve("/bin/init.out", NULL, NULL);
+    panic("exec /bin/init.out failure");
 }
 
 void task_exit(int status)

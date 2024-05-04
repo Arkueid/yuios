@@ -41,9 +41,6 @@ $(BUILD)/master.img: $(BUILD)/boot/boot.bin \
 	mkdir -p /mnt/mnt
 	mkdir -p /mnt/bin
 
-# 创建文件
-	echo "hello yuios!!!, from root directory file..." > /mnt/hello.txt
-
 # 拷贝程序
 	for app in $(BUILTIN_APPS); \
 	do \
