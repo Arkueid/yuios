@@ -45,9 +45,12 @@ static void user_init_thread()
     }
 }
 
+extern void dev_init();
+
 void init_thread()
 {
     intr_frame_t iframe; // 在任务栈栈底创建一个 中断帧
+    dev_init();
     task_to_user_mode(user_init_thread);
 }
 

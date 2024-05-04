@@ -83,6 +83,7 @@ $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 	$(BUILD)/fs/namei.o  \
 	$(BUILD)/fs/file.o  \
 	$(BUILD)/fs/stat.o  \
+	$(BUILD)/fs/dev.o  \
 	$(BUILD)/builtin/osh.o  \
 
 	$(shell mkdir -p $(dir $@))

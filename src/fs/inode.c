@@ -8,6 +8,7 @@
 #include <yui/stdlib.h>
 #include <yui/stat.h>
 #include <yui/stat.h>
+#include <yui/task.h>
 
 #define INODE_NR 64
 
@@ -102,6 +103,24 @@ inode_t *iget(dev_t dev, index_t nr)
 
     inode->ctime = inode->desc->mtime;
     inode->atime = time();
+
+    return inode;
+}
+
+inode_t *new_inode(dev_t dev, index_t nr)
+{
+    task_t *task = running_task();
+    inode_t *inode = iget(dev, nr);
+    assert(inode->desc->nlinks == 0);
+
+    inode->buf->dirty = true;
+
+    inode->desc->mode = 0777 & (~task->umask);
+    inode->desc->uid = task->uid;
+    inode->desc->size = 0;
+    inode->desc->mtime = inode->atime = time();
+    inode->desc->gid = task->gid;
+    inode->desc->nlinks = 1;
 
     return inode;
 }
@@ -253,7 +272,7 @@ static void inode_bfree(inode_t *inode, u16 *array, int index, int level)
 {
     if (!array[index])
         return;
-    
+
     if (!level)
     {
         bfree(inode->dev, array[index]);
@@ -261,7 +280,7 @@ static void inode_bfree(inode_t *inode, u16 *array, int index, int level)
     }
 
     buffer_t *buf = bread(inode->dev, array[index]);
-    for (size_t i = 0; i < BLOCK_INDEXES; i ++)
+    for (size_t i = 0; i < BLOCK_INDEXES; i++)
     {
         inode_bfree(inode, (u16 *)buf->data, i, level - 1);
     }
@@ -274,9 +293,9 @@ void inode_truncate(inode_t *inode)
 {
     if (!ISFILE(inode->desc->mode) && !ISDIR(inode->desc->mode))
         return;
-    
+
     // 释放直接块
-    for (size_t i = 0; i < DIRECT_BLOCK; i ++)
+    for (size_t i = 0; i < DIRECT_BLOCK; i++)
     {
         inode_bfree(inode, inode->desc->zone, i, 0);
         inode->desc->zone[i] = 0;
@@ -295,7 +314,7 @@ void inode_truncate(inode_t *inode)
     inode->buf->dirty = true;
     inode->desc->mtime = time();
     bwrite(inode->buf);
-} 
+}
 
 void inode_init()
 {

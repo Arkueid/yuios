@@ -150,4 +150,6 @@ file_t *get_file();
 
 void put_file(file_t *file);
 
+inode_t *new_inode(dev_t dev, index_t nr); // 创建新 inode
+
 #endif
