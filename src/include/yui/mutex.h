@@ -22,7 +22,7 @@ typedef struct lock_t
 } lock_t;
 
 void lock_init(lock_t *lock);   // 锁初始化
-void lock_accquire(lock_t *lock);   // 加锁
+void lock_acquire(lock_t *lock);   // 加锁
 void lock_release(lock_t *lock); // 解锁
 
 #endif

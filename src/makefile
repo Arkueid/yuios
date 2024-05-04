@@ -72,6 +72,7 @@ $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 	$(BUILD)/kernel/system.o \
 	$(BUILD)/kernel/ramdisk.o \
 	$(BUILD)/kernel/execve.o \
+	$(BUILD)/kernel/serial.o \
 	$(BUILD)/lib/stdlib.o \
 	$(BUILD)/lib/string.o \
 	$(BUILD)/lib/vsprintf.o \

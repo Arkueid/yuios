@@ -159,7 +159,7 @@ buffer_t *bread(dev_t dev, index_t block)
         return bf;
     }
 
-    lock_accquire(&bf->lock);
+    lock_acquire(&bf->lock);
 
     if (!bf->valid)
     {

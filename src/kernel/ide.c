@@ -255,7 +255,7 @@ int ide_pio_read(ide_disk_t *disk, void *buf, u8 count, index_t lba)
 
     ide_ctrl_t *ctrl = disk->ctrl;
 
-    lock_accquire(&ctrl->lock);
+    lock_acquire(&ctrl->lock);
 
     // 选择磁盘
     ide_select_drive(disk);
@@ -295,7 +295,7 @@ int ide_pio_write(ide_disk_t *disk, void *buf, u8 count, index_t lba)
 
     ide_ctrl_t *ctrl = disk->ctrl;
 
-    lock_accquire(&ctrl->lock);
+    lock_acquire(&ctrl->lock);
 
     DEBUG("write lba 0x%x\n", lba);
 
@@ -331,7 +331,7 @@ int ide_pio_write(ide_disk_t *disk, void *buf, u8 count, index_t lba)
 static u32 ide_identify(ide_disk_t *disk, u16 *buf)
 {
     DEBUG("identifying disk %s...\n", disk->name);
-    lock_accquire(&disk->ctrl->lock);
+    lock_acquire(&disk->ctrl->lock);
     ide_select_drive(disk);
 
     outb(disk->ctrl->iobase + IDE_COMMAND, IDE_CMD_IDENTIFY);
@@ -347,6 +347,13 @@ static u32 ide_identify(ide_disk_t *disk, u16 *buf)
     u32 ret = EOF;
     if (params->total_lba == 0)
     {
+        goto rollback;
+    }
+
+    // 简单兼容 VMWare，目前没有找到更好的办法
+    if (params->total_lba > (1 << 28))
+    {
+        params->total_lba = 0;
         goto rollback;
     }
 
