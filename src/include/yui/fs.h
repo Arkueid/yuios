@@ -153,4 +153,7 @@ void put_file(file_t *file);
 
 inode_t *new_inode(dev_t dev, index_t nr); // 创建新 inode
 
+// 格式化文件系统
+int devmkfs(dev_t dev, u32 icount);
+
 #endif

@@ -16,6 +16,7 @@
 extern bitmap_t kernel_bitmap;
 extern void task_switch(task_t *next);
 extern tss_t tss;
+extern file_t file_table[];
 
 extern u32 volatile jiffies;
 extern u32 jiffy;
@@ -250,6 +251,14 @@ static task_t *task_create(target_t target, const char *name, u32 priority, u32 
     strcpy(task->pwd, "/");
 
     task->umask = 0022; // 0755
+
+    task->files[STDIN_FILENO] = &file_table[STDIN_FILENO];
+    task->files[STDOUT_FILENO] = &file_table[STDOUT_FILENO];
+    task->files[STDERR_FILENO] = &file_table[STDERR_FILENO];
+    task->files[STDIN_FILENO]->count++;
+    task->files[STDOUT_FILENO]->count++;
+    task->files[STDERR_FILENO]->count++;
+
     // 如果栈顶移动到魔数的位置，或者该处魔数被修改
     // 说明栈溢出
     task->magic = YUI_MAGIC;

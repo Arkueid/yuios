@@ -42,9 +42,9 @@ typedef u32 index_t;
 typedef int32 fd_t;
 typedef enum std_fd_t
 {
-    stdin,
-    stdout,
-    stderr,
+    STDIN_FILENO,
+    STDOUT_FILENO,
+    STDERR_FILENO,
 } std_fd_t;
 
 typedef int32 pid_t;

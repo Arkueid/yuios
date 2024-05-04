@@ -20,6 +20,7 @@ extern void buffer_init();
 extern void super_init();
 extern void inode_init();
 extern void file_init();
+extern void ramdisk_init();
 
 void kernel_init()
 {
@@ -33,6 +34,8 @@ void kernel_init()
     time_init();
 
     ide_init();
+
+    ramdisk_init();
 
     syscall_init();
 
