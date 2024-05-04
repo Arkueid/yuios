@@ -88,7 +88,7 @@ INTERRUPT_HANDLER 0x1E, 0 ; 保留
 INTERRUPT_HANDLER 0x1F, 0 ; 保留
 
 INTERRUPT_HANDLER 0x20, 0 ; 时钟中断
-INTERRUPT_HANDLER 0x21, 0 ; 保留
+INTERRUPT_HANDLER 0x21, 0 ; 键盘中断
 INTERRUPT_HANDLER 0x22, 0 ; 保留
 INTERRUPT_HANDLER 0x23, 0 ; 保留
 INTERRUPT_HANDLER 0x24, 0 ; 保留
@@ -185,13 +185,17 @@ syscall_handler:
 
     ; syscall_handler(ebx, ecx, edx, nr)
     push 0x80    
+
+    push ebp; 第六个参数
+    push edi; 第五个参数
+    push esi; 第四个参数
     push edx
     push ecx
     push ebx
 
     call [syscall_table + eax * 4]
 
-    add esp, 12
+    add esp, (6 * 4)
 
     mov dword [esp + 8 * 4], eax
 

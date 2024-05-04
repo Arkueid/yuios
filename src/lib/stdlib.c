@@ -49,5 +49,5 @@ int atoi(const char *str)
     {
         result = result * 10 + (*str - '0');
     }
-    return result;
+    return result * sign;
 }

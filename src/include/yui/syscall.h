@@ -27,6 +27,8 @@ typedef enum syscall_t
     SYS_NR_UMOUNT,
     SYS_NR_FSTAT,
     SYS_NR_READDIR,
+    SYS_NR_MMAP,
+    SYS_NR_MUNMAP,
     SYS_NR_MKDIR,
     SYS_NR_RMDIR,
     SYS_NR_BRK,
@@ -39,6 +41,18 @@ typedef enum syscall_t
     SYS_NR_CLEAR,
     SYS_NR_MKFS,
 } syscall_t;
+
+enum mmap_type_t
+{
+    PROT_NONE = 0,
+    PROT_READ = 1,
+    PROT_WRITE = 2,
+    PROT_EXEC = 4,
+
+    MAP_SHARED = 1,
+    MAP_PRIVATE = 2,
+    MAP_FIXED = 0x10,
+};
 
 u32 test();
 
@@ -121,5 +135,11 @@ int umount(char *target);
 
 // 格式化文件系统
 int mkfs(char *devname, int icount);
+
+int brk(void *addr);
+
+void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
+
+int munmap(void *addr, size_t length);
 
 #endif
