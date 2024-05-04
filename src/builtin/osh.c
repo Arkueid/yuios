@@ -400,7 +400,7 @@ void readline(char *buf, u32 count)
         case '\t':
             continue;
         default:
-            write(STDOUT_FILENO, &ch, 1);
+            write(STDOUT_FILENO, ptr, 1);
             idx++;
             break;
         }

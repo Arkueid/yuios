@@ -29,6 +29,8 @@ lock_t mutex;
 
 extern void osh_main();
 
+#include <yui/device.h>
+#include <yui/memory.h>
 static void user_init_thread()
 {
 
@@ -57,8 +59,6 @@ void init_thread()
 void test_thread()
 {
     set_interrupt_state(true);
-
-    DEBUG("test finished of task %d\n", getpid());
 
     while (true)
     {
