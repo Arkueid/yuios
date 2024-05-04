@@ -4,17 +4,17 @@ BUILD:=../build
 SRC:=.
 
 CFLAGS:= -m32 								# 32位的程序
-CFLAGS+= -Qn								# 去掉GCC版本信息
+# CFLAGS+= -Qn								# 去掉GCC版本信息
 CFLAGS+= -fno-builtin 						# 不要 gcc 内置函数
 CFLAGS+= -nostdinc 							# 不要标准头文件
 CFLAGS+= -fno-pic 							# 不要位置无关的代码
 CFLAGS+= -fno-pie 							# 不要位置无关的可执行程序
 CFLAGS+= -nostdlib 							# 不要标准库
 CFLAGS+= -fno-stack-protector 				# 不要栈保护
-CFLAGS+= -fomit-frame-pointer				# 不需要栈帧
-CFLAGS+= -fno-asynchronous-unwind-tables 	# 不需要调试信息
-CFLAGS+= -mpreferred-stack-boundary=2 		# 不要栈对齐
-CFLAGS+= -DYUI							# 定义 ONIX
+# CFLAGS+= -fomit-frame-pointer				# 不需要栈帧
+# CFLAGS+= -fno-asynchronous-unwind-tables 	# 不需要调试信息
+# CFLAGS+= -mpreferred-stack-boundary=2 		# 不要栈对齐
+CFLAGS+= -DYUI								# 定义 YUI
 # 除去空白字符，不除去 CFLAGS="-nostdinc	"
 CFLAGS:=$(strip ${CFLAGS})
 
@@ -109,8 +109,15 @@ $(BUILD)/lib/libc.o: $(BUILD)/lib/crt.o \
 	$(BUILD)/lib/syscall.o \
 	$(BUILD)/lib/printf.o \
 	$(BUILD)/lib/assert.o \
+	$(BUILD)/lib/time.o  \
 
 	ld -m elf_i386 -r $^ -o $@
+
+BUILTIN_APPS := \
+	$(BUILD)/builtin/env.out \
+	$(BUILD)/builtin/echo.out \
+	$(BUILD)/builtin/cat.out \
+	$(BUILD)/builtin/ls.out \
 
 $(BUILD)/builtin/%.out: $(BUILD)/builtin/%.o \
 	$(BUILD)/lib/libc.o \

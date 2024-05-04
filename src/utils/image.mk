@@ -3,7 +3,7 @@ $(BUILD)/master.img: $(BUILD)/boot/boot.bin \
 		$(BUILD)/system.bin \
 		$(BUILD)/system.map \
 		$(SRC)/utils/master.sfdisk \
-		$(BUILD)/builtin/env.out \
+		$(BUILTIN_APPS) \
 
 # 创建一个 16M 的硬盘镜像
 	yes | bximage -q -hd=16 -func=create -sectsize=512 -imgmode=flat $@
@@ -45,7 +45,12 @@ $(BUILD)/master.img: $(BUILD)/boot/boot.bin \
 	echo "hello yuios!!!, from root directory file..." > /mnt/hello.txt
 
 # 拷贝程序
-	cp $(BUILD)/builtin/env.out /mnt/bin
+	for app in $(BUILTIN_APPS); \
+	do \
+		cp $$app /mnt/bin; \
+	done
+
+	echo "hello onix!!!" > /mnt/hello.txt
 
 # 卸载文件系统
 	sudo umount /mnt
