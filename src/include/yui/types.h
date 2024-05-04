@@ -52,4 +52,11 @@ typedef int32 pid_t;
 typedef u16 mode_t; // 文件权限
 
 typedef int32 off_t;  // 文件偏移
+
+// 标记弱符号
+#define weak __attribute__((__weak__))
+
+// 标记不会返回的函数
+#define noreturn __attribute__((__noreturn__))
+
 #endif

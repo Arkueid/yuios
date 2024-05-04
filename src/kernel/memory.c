@@ -162,7 +162,7 @@ static u32 get_page()
         {
             memory_map[i] = 1;
             free_pages--;
-            assert(free_pages >= 0);
+            assert(free_pages > 0);
             u32 page = PAGE(i);
             DEBUG("GET page 0x%p\n", page);
             return page; // 返回分配的页起始地址
