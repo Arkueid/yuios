@@ -100,6 +100,15 @@ static buffer_t *find_entry(
     // 确保为目录
     assert(ISDIR((*dir)->desc->mode));
 
+    if (match_name(name, "..", next) && (*dir)->nr == 1)
+    {
+        super_block_t *sb = get_super((*dir)->dev);
+        inode_t *inode = *dir;
+        (*dir) = sb->imount;
+        (*dir)->count++;
+        iput(inode);
+    }
+
     // dir 目录最多子目录数量
     u32 entries = (*dir)->desc->size / sizeof(dentry_t);
 
@@ -697,6 +706,7 @@ void abspath(char *pwd, const char *pathname)
         strcpy(cur, pathname);
         cur += strlen(pathname);
         *cur = '/';
+        *(cur + 1) = '\0';
         return;
     }
     if (cur - 1 != pwd)

@@ -23,6 +23,8 @@ typedef enum syscall_t
     SYS_NR_STAT,
     SYS_NR_LSEEK,
     SYS_NR_GETPID, // 获取进程id
+    SYS_NR_MOUNT,
+    SYS_NR_UMOUNT,
     SYS_NR_FSTAT,
     SYS_NR_READDIR,
     SYS_NR_MKDIR,
@@ -110,5 +112,10 @@ int fstat(fd_t fd, stat_t *statbuf);
 
 // 创建设备文件
 int mknod(char *filename, int mode, int dev);
+
+// 挂载设备
+int mount(char *devname, char *dirname, int flags);
+// 卸载设备
+int umount(char *target);
 
 #endif

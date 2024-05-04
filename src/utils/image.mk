@@ -36,13 +36,11 @@ $(BUILD)/master.img: $(BUILD)/boot/boot.bin \
 	sudo chown $(USER) /mnt
 
 # 创建目录
-	mkdir -p /mnt/empty
-	mkdir -p /mnt/home
-	mkdir -p /mnt/d1/d2/d3/d4
+	mkdir -p /mnt/dev
+	mkdir -p /mnt/mnt
 
 # 创建文件
 	echo "hello yuios!!!, from root directory file..." > /mnt/hello.txt
-	echo "hello yuios!!!, from home directory file..." > /mnt/home/hello.txt
 
 # 卸载文件系统
 	sudo umount /mnt
