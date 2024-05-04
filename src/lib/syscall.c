@@ -164,3 +164,13 @@ int chroot(char *pathname)
 {
     return _syscall1(SYS_NR_CHROOT, (u32)pathname);
 }
+
+int readdir(fd_t fd, void *dir, int count)
+{
+    return _syscall3(SYS_NR_READDIR, fd, (u32)dir, (u32)count);
+}
+
+void clear()
+{
+    _syscall0(SYS_NR_CLEAR);
+}

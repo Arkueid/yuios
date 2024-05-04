@@ -546,7 +546,7 @@ int sys_unlink(char *filename)
     if (!inode->desc->nlinks)
     {
         DEBUG("deleting non exists file (%04x:%d)\n",
-             inode->dev, inode->nr);
+              inode->dev, inode->nr);
     }
 
     entry->nr = 0;
@@ -582,7 +582,7 @@ inode_t *inode_open(char *pathname, int flag, int mode)
         goto rollback;
 
     if (!*next)
-        goto rollback;
+        return dir;
 
     if ((flag & O_TRUNC) && ((flag & O_ACCMODE) == O_RDONLY))
         flag |= O_RDWR;
@@ -619,7 +619,10 @@ inode_t *inode_open(char *pathname, int flag, int mode)
     inode->buf->dirty = true;
 
 makeup:
-    if (ISDIR(inode->desc->mode) || !permission(inode, flag & O_ACCMODE))
+    if (!permission(inode, flag & O_ACCMODE))
+        goto rollback;
+
+    if (ISDIR(inode->desc->mode) && ((flag & O_ACCMODE) != O_RDONLY))
         goto rollback;
 
     inode->atime = time();
@@ -637,7 +640,6 @@ rollback:
     iput(inode);
     return NULL;
 }
-
 
 char *sys_getcwd(char *buf, size_t size)
 {

@@ -34,7 +34,7 @@ static void sys_default()
 // 系统调用-test
 static u32 sys_test()
 {
-
+    DEBUG("sys_test called!!!\n");
     return 255;
 }
 
@@ -59,6 +59,10 @@ extern int sys_lseek();
 extern int sys_chdir();
 extern int sys_chroot();
 extern char *sys_getcwd();
+
+extern int sys_readdir();
+
+extern void console_clear();
 
 
 void syscall_init()
@@ -108,4 +112,7 @@ void syscall_init()
     syscall_table[SYS_NR_CHDIR] = sys_chdir;
     syscall_table[SYS_NR_CHROOT] = sys_chroot;
     syscall_table[SYS_NR_GETCWD] = sys_getcwd;
+
+    syscall_table[SYS_NR_READDIR] = sys_readdir;
+    syscall_table[SYS_NR_CLEAR] = console_clear;
 }

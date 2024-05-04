@@ -20,6 +20,7 @@ typedef enum syscall_t
     SYS_NR_TIME,
     SYS_NR_LSEEK,
     SYS_NR_GETPID, // 获取进程id
+    SYS_NR_READDIR,
     SYS_NR_MKDIR,
     SYS_NR_RMDIR,
     SYS_NR_BRK,
@@ -29,6 +30,7 @@ typedef enum syscall_t
     SYS_NR_SLEEP,
     SYS_NR_YEILD,
     SYS_NR_GETCWD,
+    SYS_NR_CLEAR,
 } syscall_t;
 
 u32 test();
@@ -91,5 +93,11 @@ int chdir(char *pathname);
 
 // 切换根目录
 int chroot(char *pathname);
+
+// 读取目录
+int readdir(fd_t fd, void *dir, int count);
+
+// 清屏
+void clear();
 
 #endif

@@ -39,6 +39,7 @@
         "device.h": "c",
         "buffer.h": "c",
         "fs.h": "c",
-        "arena.h": "c"
+        "arena.h": "c",
+        "list.h": "c"
     }
 }
