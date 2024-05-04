@@ -313,6 +313,29 @@ void builtin_mkfs(int argc, char *argv[])
     mkfs(argv[1], 0);
 }
 
+void builtin_exec(int argc, char *argv[])
+{
+    if (argc < 2)
+    {
+        return;
+    }
+
+    int status;
+    pid_t pid = fork();
+    if (pid)
+    {
+        // printf("fork after parent %d, %d, %d\n", pid, getpid(), getppid());
+        pid_t child = waitpid(pid, &status);
+        printf("wait pid %d status %d %d\n", child, status, time());
+    }
+    else
+    {
+        // execve 除非文件不合法，否则不会返回
+        int i = execve(argv[1], NULL, NULL);
+        exit(i);
+    }
+}
+
 static void execute(int argc, char *argv[])
 {
     char *line = argv[0];
@@ -340,6 +363,10 @@ static void execute(int argc, char *argv[])
             code = atoi(argv[1]);
         }
         exit(code);
+    }
+    if (!strcmp(line, "exec"))
+    {
+        return builtin_exec(argc, argv);
     }
     if (!strcmp(line, "ls"))
     {
@@ -462,10 +489,7 @@ static int cmd_parse(char *cmd, char *argv[], char token)
 }
 
 int osh_main()
-{
-    execve("/hello.out", NULL, NULL);
-
-    
+{   
     memset(cmd, 0, sizeof(cmd));
     memset(cwd, 0, sizeof(cwd));
 

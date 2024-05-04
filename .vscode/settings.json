@@ -41,6 +41,7 @@
         "fs.h": "c",
         "arena.h": "c",
         "list.h": "c",
-        "stat.h": "c"
+        "stat.h": "c",
+        "fstream": "c"
     }
 }

@@ -243,7 +243,11 @@ static task_t *task_create(target_t target, const char *name, u32 priority, u32 
     task->gid = 0; // TODO
     task->vmap = &kernel_bitmap;
     task->pde = KERNEL_PAGE_DIR;
-    task->brk = KERNEL_MEMORY_SIZE; // 内核结束位置
+    task->brk = USER_EXEC_ADDR;
+    task->text = USER_EXEC_ADDR;
+    task->data = USER_EXEC_ADDR;
+    task->end = USER_EXEC_ADDR;
+    task->iexec = NULL;
     task->iroot = task->ipwd = get_root_inode();
     task->iroot->count += 2;
 
@@ -385,6 +389,9 @@ pid_t task_fork()
     task->ipwd->count++;
     task->iroot->count++;
 
+    if (task->iexec)
+        task->iexec->count++;
+
     // 文件引用加一
     for (size_t i = 0; i < TASK_FILE_NR; i++)
     {
@@ -522,6 +529,7 @@ void task_exit(int status)
     free_kpage((u32)task->pwd, 1);
     iput(task->ipwd);
     iput(task->iroot);
+    iput(task->iexec);
 
     for (size_t i = 0; i < TASK_FILE_NR; i++)
     {
