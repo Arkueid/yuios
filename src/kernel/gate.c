@@ -64,6 +64,8 @@ extern int sys_readdir();
 
 extern void console_clear();
 
+extern int sys_stat();
+extern int sys_fstat();
 
 void syscall_init()
 {
@@ -115,4 +117,7 @@ void syscall_init()
 
     syscall_table[SYS_NR_READDIR] = sys_readdir;
     syscall_table[SYS_NR_CLEAR] = console_clear;
+
+    syscall_table[SYS_NR_STAT] = sys_stat;
+    syscall_table[SYS_NR_FSTAT] = sys_fstat;
 }

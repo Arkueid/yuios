@@ -2,6 +2,7 @@
 #define YUI_SYSCALL_H
 
 #include <yui/types.h>
+#include <yui/stat.h>
 
 typedef enum syscall_t
 {
@@ -18,8 +19,10 @@ typedef enum syscall_t
     SYS_NR_UNLINK,
     SYS_NR_CHDIR,
     SYS_NR_TIME,
+    SYS_NR_STAT,
     SYS_NR_LSEEK,
     SYS_NR_GETPID, // 获取进程id
+    SYS_NR_FSTAT,
     SYS_NR_READDIR,
     SYS_NR_MKDIR,
     SYS_NR_RMDIR,
@@ -99,5 +102,9 @@ int readdir(fd_t fd, void *dir, int count);
 
 // 清屏
 void clear();
+
+// 获取文件状态
+int stat(char *filename, stat_t *statbuf);
+int fstat(fd_t fd, stat_t *statbuf);
 
 #endif
