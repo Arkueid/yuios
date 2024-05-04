@@ -70,6 +70,7 @@ $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 	$(BUILD)/kernel/buffer.o \
 	$(BUILD)/kernel/system.o \
 	$(BUILD)/kernel/ramdisk.o \
+	$(BUILD)/kernel/execve.o \
 	$(BUILD)/lib/stdlib.o \
 	$(BUILD)/lib/string.o \
 	$(BUILD)/lib/vsprintf.o \
@@ -98,10 +99,11 @@ $(BUILD)/system.bin: $(BUILD)/kernel.bin
 $(BUILD)/system.map: $(BUILD)/kernel.bin
 	nm $< | sort > $@
 
+$(BUILD)/builtin/%.out: $(BUILD)/builtin/%.o
+	ld -m elf_i386 -static $^ -o $@ -Ttext 0x1001000
+
 include utils/image.mk
 include utils/cdrom.mk
 include utils/cmd.mk
-
-
 
 

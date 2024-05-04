@@ -17,6 +17,7 @@ typedef enum syscall_t
     SYS_NR_CREAT,
     SYS_NR_LINK,
     SYS_NR_UNLINK,
+    SYS_NR_EXECVE,
     SYS_NR_CHDIR,
     SYS_NR_TIME,
     SYS_NR_MKNOD,
@@ -141,5 +142,8 @@ int brk(void *addr);
 void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
 
 int munmap(void *addr, size_t length);
+
+// 执行程序
+int execve(char *filename, char *argv[], char *envp[]);
 
 #endif

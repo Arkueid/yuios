@@ -78,6 +78,8 @@ extern int sys_brk();
 extern int sys_mmap();
 extern int sys_munmap();
 
+extern void sys_execve();
+
 void syscall_init()
 {
     for (size_t i = 0; i < SYSCALL_SIZE; i++)
@@ -141,4 +143,6 @@ void syscall_init()
 
     syscall_table[SYS_NR_MMAP] = sys_mmap;
     syscall_table[SYS_NR_MUNMAP] = sys_munmap;
+
+    syscall_table[SYS_NR_EXECVE] = sys_execve;
 }
