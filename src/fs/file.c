@@ -2,6 +2,8 @@
 #include <yui/assert.h>
 #include <yui/task.h>
 #include <yui/device.h>
+#include <yui/syscall.h>
+#include <yui/stat.h>
 
 #define FILE_NR 128
 
@@ -34,7 +36,7 @@ void put_file(file_t *file)
 
 void file_init()
 {
-    for (size_t i = 0; i < FILE_NR; i++)
+    for (size_t i = 3; i < FILE_NR; i++)
     {
         file_t *file = &file_table[i];
         file->mode = 0;
@@ -90,22 +92,42 @@ void sys_close(fd_t fd)
 
 int sys_read(fd_t fd, char *buf, int count)
 {
-    if (fd == stdin)
-    {
-        device_t *device = device_find(DEV_KEYBOARD, 0);
-        return device_read(device->dev, buf, count, 0, 0);
-    }
 
     task_t *task = running_task();
     file_t *file = task->files[fd];
     assert(file);
     assert(count > 0);
+    int len = 0;
 
     if ((file->flags & O_ACCMODE) == O_WRONLY)
         return EOF;
 
     inode_t *inode = file->inode;
-    int len = inode_read(inode, buf, count, file->offset);
+
+    if (inode->pipe)
+    {
+        len = pipe_read(inode, buf, count);
+        return len;
+    }
+    else if (ISCHR(inode->desc->mode))
+    {
+        assert(inode->desc->zone[0]);
+        len = device_read(inode->desc->zone[0], buf, count, 0, 0);
+        return len;
+    }
+    else if (ISBLK(inode->desc->mode))
+    {
+        assert(inode->desc->zone[0]);
+        device_t *device = device_get(inode->desc->zone[0]);
+        assert(file->offset % BLOCK_SIZE == 0);
+        assert(count % BLOCK_SIZE == 0);
+        len = device_read(inode->desc->zone[0], buf, count / BLOCK_SIZE, file->offset / BLOCK_SIZE, 0);
+        return len;
+    }
+    else
+    {
+        len = inode_read(inode, buf, count, file->offset);
+    }
 
     if (len != EOF)
     {
@@ -116,11 +138,6 @@ int sys_read(fd_t fd, char *buf, int count)
 
 int sys_write(unsigned int fd, char *buf, int count)
 {
-    if (fd == stdout || fd == stderr)
-    {
-        device_t *device = device_find(DEV_CONSOLE, 0);
-        return device_write(device->dev, buf, count, 0, 0);
-    }
 
     task_t *task = running_task();
     file_t *file = task->files[fd];
@@ -130,8 +147,38 @@ int sys_write(unsigned int fd, char *buf, int count)
     if ((file->flags & O_ACCMODE) == O_RDONLY)
         return EOF;
 
+    int len = 0;
+
     inode_t *inode = file->inode;
-    int len = inode_write(inode, buf, count, file->offset);
+
+    assert(inode);
+
+    if (inode->pipe)
+    {
+        len = pipe_write(inode, buf, count);
+        return len;
+    }
+    else if (ISCHR(inode->desc->mode))
+    {
+        assert(inode->desc->zone[0]);
+        device_t *device = device_get(inode->desc->zone[0]);
+        len = device_write(inode->desc->zone[0], buf, count, 0, 0);
+        return len;
+    }
+    else if (ISBLK(inode->desc->mode))
+    {
+        assert(inode->desc->zone[0]);
+        device_t *device = device_get(inode->desc->zone[0]);
+        assert(file->offset % BLOCK_SIZE == 0);
+        assert(count % BLOCK_SIZE == 0);
+        len = device_write(inode->desc->zone[0], buf, count / BLOCK_SIZE, file->offset / BLOCK_SIZE, 0);
+        return len;
+    }
+    else
+    {
+        len = inode_write(inode, buf, count, file->offset);
+    }
+
     if (len != EOF)
     {
         file->offset += len;
@@ -174,4 +221,35 @@ int sys_lseek(fd_t fd, off_t offset, whence_t whence)
 int sys_readdir(fd_t fd, dentry_t *dir, u32 count)
 {
     return sys_read(fd, (char *)dir, sizeof(dentry_t));
+}
+
+static int dupfd(fd_t fd, fd_t arg)
+{
+    task_t *task = running_task();
+    if (fd >= TASK_FILE_NR || !task->files[fd])
+        return EOF;
+
+    for (; arg < TASK_FILE_NR; arg++)
+    {
+        if (!task->files[arg])
+            break;
+    }
+
+    if (arg >= TASK_FILE_NR)
+        return EOF;
+
+    task->files[arg] = task->files[fd];
+    task->files[arg]->count++;
+    return arg;
+}
+
+fd_t sys_dup(fd_t oldfd)
+{
+    return dupfd(oldfd, 0);
+}
+
+fd_t sys_dup2(fd_t oldfd, fd_t newfd)
+{
+    close(newfd);
+    return dupfd(oldfd, newfd);
 }

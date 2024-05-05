@@ -15,4 +15,7 @@ void *memset(void *dest, int ch, size_t count);
 void *memcpy(void *dest, const void *src, size_t count);
 void *memchr(const void *ptr, int ch, size_t count);
 
+char *strsep(const char *str);
+char *strrsep(const char *str);
+
 #endif

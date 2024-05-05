@@ -8,6 +8,9 @@
 #include <yui/bitmap.h>
 #include <yui/multiboot2.h>
 #include <yui/task.h>
+#include <yui/syscall.h>
+#include <yui/fs.h>
+#include <yui/printk.h>
 
 #define ZONE_VALID 1    // ards 可用区域
 #define ZONE_RESERVED 2 // ards 不可用区域
@@ -160,7 +163,7 @@ static u32 get_page()
         {
             memory_map[i] = 1;
             free_pages--;
-            assert(free_pages >= 0);
+            assert(free_pages > 0);
             u32 page = PAGE(i);
             DEBUG("GET page 0x%p\n", page);
             return page; // 返回分配的页起始地址
@@ -245,6 +248,8 @@ void mapping_init()
         page_entry_t *dentry = &pde[didx];
         entry_init(dentry, IDX((u32)pte));
 
+        dentry->user = 0; // 只能被内核访问
+
         for (size_t tidx = 0; tidx < 1024; tidx++, index++)
         {
             // 第0页不映射，用于空指针实现、缺页等的实现
@@ -253,6 +258,7 @@ void mapping_init()
 
             page_entry_t *tentry = &pte[tidx];
             entry_init(tentry, index);
+            tentry->user = 0; // 只能被内核访问
             memory_map[index] = 1;
         }
     }
@@ -306,8 +312,14 @@ static page_entry_t *get_pte(u32 vaddr, bool create)
     return table;
 }
 
+page_entry_t *get_entry(u32 vaddr, bool create)
+{
+    page_entry_t *pte = get_pte(vaddr, create);
+    return &pte[TIDX(vaddr)];
+}
+
 // 刷新快表
-static void flush_tlb(u32 vaddr)
+void flush_tlb(u32 vaddr)
 {
     // r 占位符
     // -> invlpg vaddr
@@ -367,21 +379,14 @@ void link_page(u32 vaddr)
 {
     ASSERT_PAGE(vaddr);
 
-    page_entry_t *pte = get_pte(vaddr, true);
-    page_entry_t *entry = &pte[TIDX(vaddr)];
+    page_entry_t *entry = get_entry(vaddr, true);
 
-    task_t *task = running_task();
-    bitmap_t *map = task->vmap;
     u32 index = IDX(vaddr);
 
     if (entry->present)
     {
-        assert(bitmap_test(map, index));
         return;
     }
-
-    assert(!bitmap_test(map, index));
-    bitmap_set(map, index, true);
 
     u32 paddr = get_page();
 
@@ -395,23 +400,18 @@ void unlink_page(u32 vaddr)
 {
     ASSERT_PAGE(vaddr);
 
-    page_entry_t *pte = get_pte(vaddr, true);
-    page_entry_t *entry = &pte[TIDX(vaddr)];
+    page_entry_t *pde = get_pde();
+    page_entry_t *entry = &pde[DIDX(vaddr)];
+    if (!entry->present)
+        return;
 
-    task_t *task = running_task();
-    bitmap_t *map = task->vmap;
-    u32 index = IDX(vaddr);
-
+    entry = get_entry(vaddr, false);
     if (!entry->present)
     {
-        assert(!bitmap_test(map, index));
         return;
     }
 
-    assert(entry->present && bitmap_test(map, index));
-
     entry->present = false;
-    bitmap_set(map, index, false);
 
     u32 paddr = PAGE(entry->index);
 
@@ -426,12 +426,16 @@ void unlink_page(u32 vaddr)
 static u32 copy_page(void *page)
 {
     u32 paddr = get_page();
+    u32 vaddr = 0;
 
-    page_entry_t *entry = get_pte(0, false);
+    page_entry_t *entry = get_pte(vaddr, false);
     entry_init(entry, IDX(paddr));
-    memcpy((void *)0, (void *)page, PAGE_SIZE);
+    flush_tlb(vaddr);
+
+    memcpy((void *)vaddr, (void *)page, PAGE_SIZE);
 
     entry->present = false;
+    flush_tlb(vaddr);
     return paddr;
 }
 
@@ -464,8 +468,10 @@ page_entry_t *copy_pde()
             // 至少有一个引用
             assert(memory_map[entry->index] > 0);
 
-            // 只读
-            entry->write = false;
+            if (!entry->shared)
+            {
+                entry->write = false;
+            }
             // 引用数 ++
             memory_map[entry->index]++;
             // 引用数不能超过255
@@ -516,6 +522,77 @@ void free_pde()
     DEBUG("free pages %d\n", free_pages);
 }
 
+void *sys_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset)
+{
+    ASSERT_PAGE((u32)addr);
+
+    u32 count = div_round_up(length, PAGE_SIZE);
+    u32 vaddr = (u32)addr;
+
+    task_t *task = running_task();
+    if (!vaddr)
+    {
+        vaddr = scan_page(task->vmap, count);
+    }
+
+    assert(vaddr >= USER_MMAP_ADDR && vaddr < USER_STACK_BOTTOM);
+
+    for (size_t i = 0; i < count; i++)
+    {
+        u32 page = vaddr + PAGE_SIZE * i;
+        link_page(page);
+        bitmap_set(task->vmap, IDX(page), true);
+
+        page_entry_t *entry = get_entry(page, false);
+        entry->user = true;
+        entry->write = false;
+        entry->readonly = true;
+
+        if (prot & PROT_WRITE)
+        {
+            entry->readonly = false;
+            entry->write = true;
+        }
+        if (flags & MAP_SHARED)
+        {
+            entry->shared = true;
+        }
+        if (flags & MAP_PRIVATE)
+        {
+            entry->privat = true;
+        }
+        flush_tlb(page);
+    }
+
+    if (fd != EOF)
+    {
+        lseek(fd, offset, SEEK_SET);
+        read(fd, (char *)vaddr, length);
+    }
+
+    return (void *)vaddr;
+}
+
+int sys_munmap(void *addr, size_t length)
+{
+    task_t *task = running_task();
+    u32 vaddr = (u32)addr;
+    assert(vaddr >= USER_MMAP_ADDR && vaddr < USER_STACK_BOTTOM);
+
+    ASSERT_PAGE(vaddr);
+    u32 count = div_round_up(length, PAGE_SIZE);
+
+    for (size_t i = 0; i < count; i++)
+    {
+        u32 page = vaddr + PAGE_SIZE * i;
+        unlink_page(page);
+        assert(bitmap_test(task->vmap, IDX(page)));
+        bitmap_set(task->vmap, IDX(page), false);
+    }
+
+    return 0;
+}
+
 typedef struct page_error_code_t
 {
     u8 present : 1;
@@ -545,16 +622,24 @@ void page_fault(
     page_error_code_t *code = (page_error_code_t *)&error;
     task_t *task = running_task();
 
-    assert(KERNEL_MEMORY_SIZE <= vaddr && vaddr < USER_STACK_TOP);
+    // 如果用户程序访问了不该访问的内存
+    if (vaddr < USER_EXEC_ADDR || vaddr >= USER_STACK_TOP)
+    {
+        assert(task->uid);
+        printk("Segmentation Fault!!!\n");
+        task_exit(-1);
+    }
 
     if (code->present)
     {
         assert(code->write);
 
-        page_entry_t *pte = get_pte(vaddr, false);
-        page_entry_t *entry = &pte[TIDX(vaddr)];
+        page_entry_t *entry = get_entry(vaddr, false);
 
-        assert(entry->present);
+        assert(entry->present);   // 目前写内存应该是存在的
+        assert(!entry->shared);   // 共享内存页，不应该引发缺页
+        assert(!entry->readonly); // 只读内存页，不应该被写
+
         assert(memory_map[entry->index] > 0);
 
         if (memory_map[entry->index] == 1)
@@ -582,6 +667,7 @@ void page_fault(
         return;
     }
 
+    DEBUG("task 0x%p name %s brk 0x%p page fault\n", task, task->name, task->brk);
     panic("page fault!!!");
 }
 
@@ -595,14 +681,13 @@ int32 sys_brk(void *addr)
     task_t *task = running_task();
     assert(task->uid != KERNEL_USER);
 
-    // TODO:上界后续修改 此处有问题
-    assert(KERNEL_MEMORY_SIZE <= brk && brk < USER_STACK_BOTTOM);
+    assert(task->end <= brk && brk <= USER_MMAP_ADDR);
 
     u32 old_brk = task->brk;
 
     if (old_brk > brk)
     {
-        for (u32 page = brk; brk < old_brk; page += PAGE_SIZE)
+        for (u32 page = brk; page < old_brk; page += PAGE_SIZE)
         {
             unlink_page(page);
         }

@@ -34,7 +34,23 @@ static void sys_default()
 // 系统调用-test
 static u32 sys_test()
 {
-    DEBUG("sys_test called!!!\n");
+    char ch;
+    device_t *device;
+
+    device_t *serial = device_find(DEV_SERIAL, 0);
+    assert(serial);
+
+    device_t *keyboard = device_find(DEV_KEYBOARD, 0);
+    assert(keyboard);
+
+    device_t *console = device_find(DEV_CONSOLE, 0);
+    assert(console);
+
+    device_read(serial->dev, &ch, 1, 0, 0);
+
+    device_write(serial->dev, &ch, 1, 0, 0);
+    device_write(console->dev, &ch, 1, 0, 0);
+
     return 255;
 }
 
@@ -66,6 +82,24 @@ extern void console_clear();
 
 extern int sys_stat();
 extern int sys_fstat();
+
+extern int sys_mknod();
+
+extern int sys_mount();
+extern int sys_umount();
+
+extern int sys_mkfs();
+
+extern int sys_brk();
+extern int sys_mmap();
+extern int sys_munmap();
+
+extern void sys_execve();
+
+extern fd_t sys_dup();
+extern fd_t sys_dup2();
+
+extern int sys_pipe();
 
 void syscall_init()
 {
@@ -120,4 +154,21 @@ void syscall_init()
 
     syscall_table[SYS_NR_STAT] = sys_stat;
     syscall_table[SYS_NR_FSTAT] = sys_fstat;
+
+    syscall_table[SYS_NR_MKNOD] = sys_mknod;
+
+    syscall_table[SYS_NR_MOUNT] = sys_mount;
+    syscall_table[SYS_NR_UMOUNT] = sys_umount;
+
+    syscall_table[SYS_NR_MKFS] = sys_mkfs;
+
+    syscall_table[SYS_NR_MMAP] = sys_mmap;
+    syscall_table[SYS_NR_MUNMAP] = sys_munmap;
+
+    syscall_table[SYS_NR_EXECVE] = sys_execve;
+
+    syscall_table[SYS_NR_DUP] = sys_dup;
+    syscall_table[SYS_NR_DUP2] = sys_dup2;
+
+    syscall_table[SYS_NR_PIPE] = sys_pipe;
 }

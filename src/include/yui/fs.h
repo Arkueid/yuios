@@ -48,6 +48,9 @@ typedef struct inode_t
     time_t ctime;         // 创建时间
     list_node_t node;     // 链表节点
     dev_t mount;          // 挂载设备
+    struct task_t *rxwaiter; // 读等待进程
+    struct task_t *txwaiter; // 写等待进程
+    bool pipe;               // 管道标志
 } inode_t;
 
 typedef struct super_desc_t
@@ -69,6 +72,7 @@ typedef struct super_block_t
     struct buffer_t *imaps[IMAP_NR]; // inode 位图缓冲
     struct buffer_t *zmaps[ZMAP_NR]; // 块位图缓冲
     dev_t dev;                       // 设备号
+    u32 count;                       // 引用计数
     list_t inode_list;               // 使用中 inode 链表
     inode_t *iroot;                  // 根目录 inode
     inode_t *imount;                 // 挂载到的 inode
@@ -149,5 +153,25 @@ inode_t *inode_open(char *pathname, int flag, int mode);
 file_t *get_file();
 
 void put_file(file_t *file);
+
+inode_t *new_inode(dev_t dev, index_t nr); // 创建新 inode
+
+// 格式化文件系统
+int devmkfs(dev_t dev, u32 icount);
+
+#define P_EXEC IXOTH
+#define P_READ IROTH
+#define P_WRITE IWOTH
+
+// 检查权限
+bool permission(inode_t *inode, u16 mask);
+
+#define ACC_MODE(x) ("\004\002\006\377"[(x) & O_ACCMODE])
+
+inode_t *get_pipe_inode(); // 获取管道 inode
+// 管道读
+int pipe_read(inode_t *inode, char *buf, int count);
+// 管道写
+int pipe_write(inode_t *inode, char *buf, int count);
 
 #endif

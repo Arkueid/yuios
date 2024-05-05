@@ -3,17 +3,18 @@ BUILD:=../build
 # 源文件夹
 SRC:=.
 
-CFLAGS:= -m32 						# 32位的程序
-CFLAGS+= -Qn						# 去掉GCC版本信息
-CFLAGS+= -fno-builtin 				# 不要 gcc 内置函数
-CFLAGS+= -nostdinc 					# 不要标准头文件
-CFLAGS+= -fno-pic 					# 不要位置无关的代码
-CFLAGS+= -fno-pie 					# 不要位置无关的可执行程序
-CFLAGS+= -nostdlib 					# 不要标准库
-CFLAGS+= -fno-stack-protector 		# 不要栈保护
-CFLAGS+= -fomit-frame-pointer		# 不需要栈帧
-CFLAGS+= -fno-asynchronous-unwind-tables # 不需要调试信息
-CFLAGS+= -mpreferred-stack-boundary=2 # 不要栈对齐
+CFLAGS:= -m32 								# 32位的程序
+# CFLAGS+= -Qn								# 去掉GCC版本信息
+CFLAGS+= -fno-builtin 						# 不要 gcc 内置函数
+CFLAGS+= -nostdinc 							# 不要标准头文件
+CFLAGS+= -fno-pic 							# 不要位置无关的代码
+CFLAGS+= -fno-pie 							# 不要位置无关的可执行程序
+CFLAGS+= -nostdlib 							# 不要标准库
+CFLAGS+= -fno-stack-protector 				# 不要栈保护
+# CFLAGS+= -fomit-frame-pointer				# 不需要栈帧
+# CFLAGS+= -fno-asynchronous-unwind-tables 	# 不需要调试信息
+# CFLAGS+= -mpreferred-stack-boundary=2 		# 不要栈对齐
+CFLAGS+= -DYUI								# 定义 YUI
 # 除去空白字符，不除去 CFLAGS="-nostdinc	"
 CFLAGS:=$(strip ${CFLAGS})
 
@@ -69,6 +70,9 @@ $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 	$(BUILD)/kernel/ide.o \
 	$(BUILD)/kernel/buffer.o \
 	$(BUILD)/kernel/system.o \
+	$(BUILD)/kernel/ramdisk.o \
+	$(BUILD)/kernel/execve.o \
+	$(BUILD)/kernel/serial.o \
 	$(BUILD)/lib/stdlib.o \
 	$(BUILD)/lib/string.o \
 	$(BUILD)/lib/vsprintf.o \
@@ -76,14 +80,14 @@ $(BUILD)/kernel.bin: $(BUILD)/kernel/start.o \
 	$(BUILD)/lib/syscall.o \
 	$(BUILD)/lib/list.o  \
 	$(BUILD)/lib/fifo.o  \
-	$(BUILD)/lib/printf.o  \
 	$(BUILD)/fs/super.o  \
 	$(BUILD)/fs/bmap.o  \
 	$(BUILD)/fs/inode.o  \
 	$(BUILD)/fs/namei.o  \
 	$(BUILD)/fs/file.o  \
 	$(BUILD)/fs/stat.o  \
-	$(BUILD)/builtin/osh.o  \
+	$(BUILD)/fs/dev.o  \
+	$(BUILD)/fs/pipe.o \
 
 	$(shell mkdir -p $(dir $@))
 	ld $(LDFLAGS) $^ -o $@
@@ -96,10 +100,35 @@ $(BUILD)/system.bin: $(BUILD)/kernel.bin
 $(BUILD)/system.map: $(BUILD)/kernel.bin
 	nm $< | sort > $@
 
+$(BUILD)/lib/libc.o: $(BUILD)/lib/crt.o \
+	$(BUILD)/lib/crt1.o \
+	$(BUILD)/lib/string.o \
+	$(BUILD)/lib/vsprintf.o \
+	$(BUILD)/lib/stdlib.o \
+	$(BUILD)/lib/syscall.o \
+	$(BUILD)/lib/printf.o \
+	$(BUILD)/lib/assert.o \
+	$(BUILD)/lib/time.o  \
+
+	ld -m elf_i386 -r $^ -o $@
+
+BUILTIN_APPS := \
+	$(BUILD)/builtin/init.out \
+	$(BUILD)/builtin/osh.out  \
+	$(BUILD)/builtin/env.out \
+	$(BUILD)/builtin/echo.out \
+	$(BUILD)/builtin/cat.out \
+	$(BUILD)/builtin/ls.out \
+	$(BUILD)/builtin/dup.out \
+	$(BUILD)/builtin/err.out \
+
+$(BUILD)/builtin/%.out: $(BUILD)/builtin/%.o \
+	$(BUILD)/lib/libc.o \
+
+	ld -m elf_i386 -static $^ -o $@ -Ttext 0x1001000
+
 include utils/image.mk
 include utils/cdrom.mk
 include utils/cmd.mk
-
-
 
 

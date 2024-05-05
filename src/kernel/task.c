@@ -16,6 +16,7 @@
 extern bitmap_t kernel_bitmap;
 extern void task_switch(task_t *next);
 extern tss_t tss;
+extern file_t file_table[];
 
 extern u32 volatile jiffies;
 extern u32 jiffy;
@@ -68,8 +69,6 @@ fd_t task_get_fd(task_t *task)
 
 void task_put_fd(task_t *task, fd_t fd)
 {
-    if (fd < 3)
-        return;
     assert(fd < TASK_FILE_NR);
     task->files[fd] = NULL;
 }
@@ -242,7 +241,11 @@ static task_t *task_create(target_t target, const char *name, u32 priority, u32 
     task->gid = 0; // TODO
     task->vmap = &kernel_bitmap;
     task->pde = KERNEL_PAGE_DIR;
-    task->brk = KERNEL_MEMORY_SIZE; // 内核结束位置
+    task->brk = USER_EXEC_ADDR;
+    task->text = USER_EXEC_ADDR;
+    task->data = USER_EXEC_ADDR;
+    task->end = USER_EXEC_ADDR;
+    task->iexec = NULL;
     task->iroot = task->ipwd = get_root_inode();
     task->iroot->count += 2;
 
@@ -250,6 +253,14 @@ static task_t *task_create(target_t target, const char *name, u32 priority, u32 
     strcpy(task->pwd, "/");
 
     task->umask = 0022; // 0755
+
+    task->files[STDIN_FILENO] = &file_table[STDIN_FILENO];
+    task->files[STDOUT_FILENO] = &file_table[STDOUT_FILENO];
+    task->files[STDERR_FILENO] = &file_table[STDERR_FILENO];
+    task->files[STDIN_FILENO]->count++;
+    task->files[STDOUT_FILENO]->count++;
+    task->files[STDERR_FILENO]->count++;
+
     // 如果栈顶移动到魔数的位置，或者该处魔数被修改
     // 说明栈溢出
     task->magic = YUI_MAGIC;
@@ -376,6 +387,9 @@ pid_t task_fork()
     task->ipwd->count++;
     task->iroot->count++;
 
+    if (task->iexec)
+        task->iexec->count++;
+
     // 文件引用加一
     for (size_t i = 0; i < TASK_FILE_NR; i++)
     {
@@ -443,7 +457,9 @@ rollback:
     return ret;
 }
 
-void task_to_user_mode(target_t target)
+extern int sys_execve();
+
+void task_to_user_mode()
 {
     task_t *task = running_task();
 
@@ -451,7 +467,7 @@ void task_to_user_mode(target_t target)
 
     void *buf = (void *)alloc_kpage(1);
 
-    bitmap_init(task->vmap, buf, PAGE_SIZE, KERNEL_MEMORY_SIZE / PAGE_SIZE);
+    bitmap_init(task->vmap, buf, USER_MMAP_SIZE / PAGE_SIZE / 8, USER_MMAP_ADDR / PAGE_SIZE);
 
     // 创建用户进程页表
     task->pde = (u32)copy_pde();
@@ -485,13 +501,12 @@ void task_to_user_mode(target_t target)
 
     iframe->error = YUI_MAGIC;
 
-    iframe->eip = (u32)target;
+    iframe->eip = 0;
     iframe->eflags = (0 << 12 | 0b10 | 1 << 9);
     iframe->esp = USER_STACK_TOP; // 返回地址
 
-    asm volatile(
-        "movl %0, %%esp\n"
-        "jmp interrupt_exit\n" ::"m"(iframe));
+    int err = sys_execve("/bin/init.out", NULL, NULL);
+    panic("exec /bin/init.out failure");
 }
 
 void task_exit(int status)
@@ -513,6 +528,7 @@ void task_exit(int status)
     free_kpage((u32)task->pwd, 1);
     iput(task->ipwd);
     iput(task->iroot);
+    iput(task->iexec);
 
     for (size_t i = 0; i < TASK_FILE_NR; i++)
     {

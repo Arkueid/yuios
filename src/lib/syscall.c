@@ -40,6 +40,39 @@ static _inline u32 _syscall3(u32 nr, u32 arg1, u32 arg2, u32 arg3)
     return ret;
 }
 
+static _inline u32 _syscall4(u32 nr, u32 arg1, u32 arg2, u32 arg3, u32 arg4)
+{
+    u32 ret;
+    asm volatile(
+        "int $0x80\n"
+        : "=a"(ret)
+        : "a"(nr), "b"(arg1), "c"(arg2), "d"(arg3), "S"(arg4));
+    return ret;
+}
+
+static _inline u32 _syscall5(u32 nr, u32 arg1, u32 arg2, u32 arg3, u32 arg4, u32 arg5)
+{
+    u32 ret;
+    asm volatile(
+        "int $0x80\n"
+        : "=a"(ret)
+        : "a"(nr), "b"(arg1), "c"(arg2), "d"(arg3), "S"(arg4), "D"(arg5));
+    return ret;
+}
+
+static _inline u32 _syscall6(u32 nr, u32 arg1, u32 arg2, u32 arg3, u32 arg4, u32 arg5, u32 arg6)
+{
+    u32 ret;
+    asm volatile(
+        "pushl %%ebp\n"
+        "movl %7, %%ebp\n"
+        "int $0x80\n"
+        "popl %%ebp\n"
+        : "=a"(ret)
+        : "a"(nr), "b"(arg1), "c"(arg2), "d"(arg3), "S"(arg4), "D"(arg5), "m"(arg6));
+    return ret;
+}
+
 // 系统调用-test
 u32 test()
 {
@@ -183,4 +216,54 @@ int stat(char *filename, stat_t *statbuf)
 int fstat(fd_t fd, stat_t *statbuf)
 {
     return _syscall2(SYS_NR_FSTAT, (u32)fd, (u32)statbuf);
+}
+
+int mknod(char *filename, int mode, int dev)
+{
+    return _syscall3(SYS_NR_MKNOD, (u32)filename, (u32)mode, (u32)dev);
+}
+
+int mount(char *devname, char *dirname, int flags)
+{
+    return _syscall3(SYS_NR_MOUNT, (u32)devname, (u32)dirname, (u32)flags);
+}
+
+int umount(char *target)
+{
+    return _syscall1(SYS_NR_UMOUNT, (u32)target);
+}
+
+int mkfs(char *devname, int icount)
+{
+    return _syscall2(SYS_NR_MKFS, (u32)devname, (u32)icount);
+}
+
+void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset)
+{
+    return (void *)_syscall6(SYS_NR_MMAP, (u32)addr, length, prot, flags, fd, offset);
+}
+
+int munmap(void *addr, size_t length)
+{
+    return _syscall2(SYS_NR_MUNMAP, (u32)addr, length);
+}
+
+int execve(char *filename, char *argv[], char *envp[])
+{
+    return _syscall3(SYS_NR_EXECVE, (u32)filename, (u32)argv, (u32)envp);
+}
+
+fd_t dup(fd_t oldfd)
+{
+    return _syscall1(SYS_NR_DUP, oldfd);
+}
+
+fd_t dup2(fd_t oldfd, fd_t newfd)
+{
+    return _syscall2(SYS_NR_DUP2, oldfd, newfd);
+}
+
+int pipe(fd_t pipefd[2])
+{
+    return _syscall1(SYS_NR_PIPE, (u32)pipefd);
 }

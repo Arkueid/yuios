@@ -71,7 +71,7 @@ void lock_init(lock_t *lock)
     mutex_init(&lock->mutex);
 }
 
-void lock_accquire(lock_t *lock)
+void lock_acquire(lock_t *lock)
 {
     task_t *current = running_task();
 

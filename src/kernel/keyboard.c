@@ -377,7 +377,7 @@ void keyboard_handler(int vector)
 
 u32 keyboard_read(void *dev, char *buf, u32 count)
 {
-    lock_accquire(&lock);
+    lock_acquire(&lock);
 
     int nr = 0;
     while (nr < count)

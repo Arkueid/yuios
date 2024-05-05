@@ -11,7 +11,7 @@
 #define P_READ IROTH
 #define P_WRITE IWOTH
 
-static bool permission(inode_t *inode, u16 mask)
+bool permission(inode_t *inode, u16 mask)
 {
     u16 mode = inode->desc->mode;
 
@@ -30,42 +30,6 @@ static bool permission(inode_t *inode, u16 mask)
     if ((mode & mask & 0b111) == mask)
         return true;
     return false;
-}
-
-// 获取第一个分隔符
-char *strsep(const char *str)
-{
-    char *ptr = (char *)str;
-    while (true)
-    {
-        if (IS_SEPARATOR(*ptr))
-        {
-            return ptr;
-        }
-        if (*ptr++ == EOS)
-        {
-            return NULL;
-        }
-    }
-}
-
-// 获取最后一个分隔符
-char *strrsep(const char *str)
-{
-    char *last = NULL;
-    char *ptr = (char *)str;
-    while (true)
-    {
-        if (IS_SEPARATOR(*ptr))
-        {
-            last = ptr;
-        }
-
-        if (*ptr++ == EOS)
-        {
-            return last;
-        }
-    }
 }
 
 // 判断文件名是否相等
@@ -100,6 +64,15 @@ static buffer_t *find_entry(
     // 确保为目录
     assert(ISDIR((*dir)->desc->mode));
 
+    if (match_name(name, "..", next) && (*dir)->nr == 1)
+    {
+        super_block_t *sb = get_super((*dir)->dev);
+        inode_t *inode = *dir;
+        (*dir) = sb->imount;
+        (*dir)->count++;
+        iput(inode);
+    }
+
     // dir 目录最多子目录数量
     u32 entries = (*dir)->desc->size / sizeof(dentry_t);
 
@@ -124,7 +97,7 @@ static buffer_t *find_entry(
             entry = (dentry_t *)buf->data;
         }
 
-        if (match_name(name, entry->name, next))
+        if (match_name(name, entry->name, next)  && entry->nr)
         {
             *result = entry;
             return buf;
@@ -307,14 +280,10 @@ int sys_mkdir(char *pathname, int mode)
     entry->nr = ialloc(dir->dev);
 
     task_t *task = running_task();
-    inode_t *inode = iget(dir->dev, entry->nr);
-    inode->buf->dirty = true;
+    inode_t *inode = new_inode(dir->dev, entry->nr);
 
-    inode->desc->gid = task->gid;
-    inode->desc->uid = task->uid;
     inode->desc->mode = (mode & 0777 & ~task->umask) | IFDIR;
     inode->desc->size = sizeof(dentry_t) * 2; // 当前目录和父目录两个目录项
-    inode->desc->mtime = time();              // 时间戳
     inode->desc->nlinks = 2;                  // 一个是 '.' 一个是 name
 
     // 父目录链接数加 1
@@ -603,23 +572,17 @@ inode_t *inode_open(char *pathname, int flag, int mode)
 
     buf = add_entry(dir, name, &entry);
     entry->nr = ialloc(dir->dev);
-    inode = iget(dir->dev, entry->nr);
+    inode = new_inode(dir->dev, entry->nr);
 
     task_t *task = running_task();
 
     mode &= (0777 & ~task->umask);
     mode |= IFREG;
 
-    inode->desc->uid = task->uid;
-    inode->desc->gid = task->gid;
     inode->desc->mode = mode;
-    inode->desc->mtime = time();
-    inode->desc->size = 0;
-    inode->desc->nlinks = 1;
-    inode->buf->dirty = true;
 
 makeup:
-    if (!permission(inode, flag & O_ACCMODE))
+    if (!permission(inode, ACC_MODE(flag & O_ACCMODE)))
         goto rollback;
 
     if (ISDIR(inode->desc->mode) && ((flag & O_ACCMODE) != O_RDONLY))
@@ -707,6 +670,7 @@ void abspath(char *pwd, const char *pathname)
         strcpy(cur, pathname);
         cur += strlen(pathname);
         *cur = '/';
+        *(cur + 1) = '\0';
         return;
     }
     if (cur - 1 != pwd)
@@ -754,4 +718,47 @@ int sys_chroot(char *pathname)
 rollback:
     iput(inode);
     return EOF;
+}
+
+int sys_mknod(char *filename, int mode, int dev)
+{
+    char *next = NULL;
+    inode_t *dir = NULL;
+    buffer_t *buf = NULL;
+    inode_t *inode = NULL;
+    int ret = EOF;
+
+    dir = named(filename, &next);
+    if (!dir)
+        goto rollback;
+
+    if (!(*next))
+        goto rollback;
+
+    if (!permission(dir, P_WRITE))
+        goto rollback;
+
+    char *name = next;
+    dentry_t *entry;
+    buf = find_entry(&dir, name, &next, &entry);
+    if (buf) // 目录项存在
+        goto rollback;
+
+    buf = add_entry(dir, name, &entry);
+    buf->dirty = true;
+    entry->nr = ialloc(dir->dev);
+
+    inode = new_inode(dir->dev, entry->nr);
+
+    inode->desc->mode = mode;
+    if (ISBLK(mode) || ISCHR(mode))
+        inode->desc->zone[0] = dev;
+
+    ret = 0;
+
+rollback:
+    brelse(buf);
+    iput(inode);
+    iput(dir);
+    return ret;
 }
